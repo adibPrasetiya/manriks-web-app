@@ -15,6 +15,7 @@ import {
   hashRefreshToken,
 } from "../utils/token.utils.js";
 import { generateDeviceId, parseDeviceName } from "../utils/device.utils.js";
+import { ResponseError } from "../errors/response.error.js";
 
 const registration = async (reqBody) => {
   reqBody = validate(registedNewUserSchema, reqBody);
