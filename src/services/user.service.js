@@ -107,6 +107,7 @@ const login = async (reqBody, userAgent, ipAddress) => {
           role: true,
         },
       },
+      profile: true,
     },
   });
 
@@ -178,6 +179,7 @@ const login = async (reqBody, userAgent, ipAddress) => {
         isActive: user.isActive,
         isVerified: user.isVerified,
         roles: roles,
+        hasProfile: !!user.profile,
       },
       accessToken: accessToken,
       refreshToken: refreshToken,
@@ -352,6 +354,7 @@ const refreshToken = async (reqBody) => {
               role: true,
             },
           },
+          profile: true,
         },
       },
     },
@@ -392,6 +395,16 @@ const refreshToken = async (reqBody) => {
   return {
     message: "Access token berhasil diperbarui",
     data: {
+      user: {
+        id: session.user.id,
+        username: session.user.username,
+        name: session.user.name,
+        email: session.user.email,
+        isActive: session.user.isActive,
+        isVerified: session.user.isVerified,
+        roles: roles,
+        hasProfile: !!session.user.profile,
+      },
       accessToken: newAccessToken,
     },
   };

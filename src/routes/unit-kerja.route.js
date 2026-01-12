@@ -17,7 +17,6 @@ export const unitKerjaRoutes = [
     method: "get",
     path: "/unit-kerja/:id",
     handler: unitKerjaController.getById,
-    roles: [ROLES.ADMINISTRATOR],
   },
   {
     method: "patch",

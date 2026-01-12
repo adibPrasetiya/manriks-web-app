@@ -16,7 +16,7 @@ const create = async (reqBody, userId) => {
 
   if (existingProfile) {
     throw new ResponseError(
-      403,
+      409,
       "Gagal membuat profile baru. Profile anda sudah dibuat."
     );
   }

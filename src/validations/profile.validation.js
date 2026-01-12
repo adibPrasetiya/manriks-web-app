@@ -5,7 +5,7 @@ const createNewProfileSchema = Joi.object({
     "string.empty": "Jabatan tidak boleh kosong",
     "string.min": "Jabatan minimal 3 karakter",
     "string.max": "Jabatan maksimal 255 karakter",
-    "any.required": "Username wajib diisi",
+    "any.required": "Jabatan wajib diisi",
   }),
 
   unitKerjaId: Joi.string().required().messages({

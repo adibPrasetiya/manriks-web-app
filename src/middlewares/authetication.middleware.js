@@ -32,6 +32,7 @@ export const authenticationMiddleware = async (req, res, next) => {
             role: true,
           },
         },
+        profile: true,
       },
     });
 
@@ -73,6 +74,22 @@ export const authenticationMiddleware = async (req, res, next) => {
       }
     }
 
+    // Check if user has profile
+    if (!user.profile) {
+      const isCreateProfileEndpoint =
+        req.method === "POST" && req.path === "/users/me/profile";
+      const isLogoutEndpoint =
+        req.method === "DELETE" && req.path === "/users/me/logout";
+
+      if (!isCreateProfileEndpoint && !isLogoutEndpoint) {
+        return res.status(403).json({
+          errors:
+            "Profile creation required. Please create your profile before accessing other resources.",
+          mustCreateProfile: true,
+        });
+      }
+    }
+
     const roles = user.userRoles.map((ur) => ur.role.name);
 
     req.user = {
@@ -83,6 +100,7 @@ export const authenticationMiddleware = async (req, res, next) => {
       isActive: user.isActive,
       isVerified: user.isVerified,
       roles: roles,
+      hasProfile: !!user.profile,
     };
 
     next();

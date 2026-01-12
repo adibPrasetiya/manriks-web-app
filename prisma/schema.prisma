@@ -92,7 +92,6 @@ model Profile {
   jabatan     String     @db.VarChar(255)
   unitKerjaId String
   unitKerja   UnitKerja  @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
-  email       String?    @db.VarChar(255) // Optional
   nomorHP     String?    @db.VarChar(20) // Optional
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
