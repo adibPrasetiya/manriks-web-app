@@ -12,7 +12,6 @@ export const unitKerjaRoutes = [
     method: "get",
     path: "/unit-kerja",
     handler: unitKerjaController.search,
-    roles: [ROLES.ADMINISTRATOR],
   },
   {
     method: "get",

@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-api.dev.manrisk.simulasibimtek.
+api.dev.manrisk.simulasibimtekd31.com
 ```
 
 ## Authentication
