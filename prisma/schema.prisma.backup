@@ -1,0 +1,598 @@
+/ ============================================
+// DOMAIN 1: ORGANIZATION & MULTI-TENANCY
+// ============================================
+
+model Organization {
+  id          Int     @id @default(autoincrement())
+  uuid        String  @unique @default(uuid()) @db.VarChar(36)
+  name        String  @db.VarChar(255)
+  code        String  @unique @db.VarChar(50)
+  description String? @db.Text
+  status      String  @default("active") @db.VarChar(20)
+  metadata    Json?
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  riskContexts RiskContext[]
+  assets       Asset[]
+  controls     Control[]
+  auditLogs    AuditLog[]
+
+  @@index([status])
+  @@index([deleted_at])
+  @@map("organizations")
+}
+
+// ============================================
+// DOMAIN 2: RISK CONTEXT & VERSIONING
+// ============================================
+
+model RiskContext {
+  id              Int    @id @default(autoincrement())
+  uuid            String @unique @default(uuid()) @db.VarChar(36)
+  organization_id Int
+
+  name           String    @db.VarChar(255)
+  description    String?   @db.Text
+  effective_date DateTime  @db.Date
+  end_date       DateTime? @db.Date
+  status         String    @default("draft") @db.VarChar(20)
+
+  scope          String @db.Text
+  scope_metadata Json?
+
+  risk_appetite  String? @db.Text
+  risk_tolerance Json?
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  organization        Organization         @relation(fields: [organization_id], references: [id], onDelete: Restrict)
+  likelihoodScales    LikelihoodScale[]
+  impactCategories    ImpactCategory[]
+  impactScales        ImpactScale[]
+  riskMatrixCells     RiskMatrixCell[]
+  riskLevelThresholds RiskLevelThreshold[]
+  valuationCriteria   ValuationCriteria[]
+  assetSnapshots      AssetSnapshot[]
+  riskAssessments     RiskAssessment[]
+  riskReviews         RiskReview[]
+  risks               Risk[]
+
+  @@unique([organization_id, effective_date])
+  @@index([organization_id, status])
+  @@index([effective_date])
+  @@index([status])
+  @@map("risk_contexts")
+}
+
+model LikelihoodScale {
+  id              Int      @id @default(autoincrement())
+  risk_context_id Int
+  name            String   @db.VarChar(100)
+  level           Int
+  description     String?  @db.Text
+  probability_min Decimal? @db.Decimal(5, 4)
+  probability_max Decimal? @db.Decimal(5, 4)
+  color_code      String?  @db.VarChar(7)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext     RiskContext      @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  riskMatrixCells RiskMatrixCell[] @relation("LikelihoodToMatrix")
+
+  @@unique([risk_context_id, level])
+  @@index([risk_context_id])
+  @@map("likelihood_scales")
+}
+
+model ImpactCategory {
+  id              Int      @id @default(autoincrement())
+  risk_context_id Int
+  name            String   @db.VarChar(100)
+  code            String   @db.VarChar(50)
+  description     String?  @db.Text
+  weight          Decimal? @db.Decimal(5, 2)
+  display_order   Int      @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext  RiskContext   @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  impactScales ImpactScale[]
+
+  @@unique([risk_context_id, code])
+  @@index([risk_context_id])
+  @@map("impact_categories")
+}
+
+model ImpactScale {
+  id                 Int      @id @default(autoincrement())
+  risk_context_id    Int
+  impact_category_id Int
+  name               String   @db.VarChar(100)
+  level              Int
+  description        String?  @db.Text
+  value_min          Decimal? @db.Decimal(15, 2)
+  value_max          Decimal? @db.Decimal(15, 2)
+  color_code         String?  @db.VarChar(7)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext     RiskContext      @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  impactCategory  ImpactCategory   @relation(fields: [impact_category_id], references: [id], onDelete: Cascade)
+  riskMatrixCells RiskMatrixCell[] @relation("ImpactToMatrix")
+
+  @@unique([risk_context_id, impact_category_id, level])
+  @@index([risk_context_id])
+  @@index([impact_category_id])
+  @@map("impact_scales")
+}
+
+model RiskMatrixCell {
+  id              Int      @id @default(autoincrement())
+  risk_context_id Int
+  likelihood_id   Int
+  impact_scale_id Int
+  risk_level      String   @db.VarChar(50)
+  risk_score      Decimal? @db.Decimal(8, 2)
+  color_code      String?  @db.VarChar(7)
+  requires_action Boolean  @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext     RiskContext     @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  likelihoodScale LikelihoodScale @relation("LikelihoodToMatrix", fields: [likelihood_id], references: [id], onDelete: Cascade)
+  impactScale     ImpactScale     @relation("ImpactToMatrix", fields: [impact_scale_id], references: [id], onDelete: Cascade)
+
+  @@unique([risk_context_id, likelihood_id, impact_scale_id])
+  @@index([risk_context_id])
+  @@index([risk_level])
+  @@map("risk_matrix_cells")
+}
+
+model RiskLevelThreshold {
+  id              Int      @id @default(autoincrement())
+  risk_context_id Int
+  level_name      String   @db.VarChar(50)
+  level_order     Int
+  description     String?  @db.Text
+  color_code      String   @db.VarChar(7)
+  score_min       Decimal? @db.Decimal(8, 2)
+  score_max       Decimal? @db.Decimal(8, 2)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext RiskContext @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+
+  @@unique([risk_context_id, level_name])
+  @@unique([risk_context_id, level_order])
+  @@index([risk_context_id])
+  @@map("risk_level_thresholds")
+}
+
+model ValuationCriteria {
+  id              Int      @id @default(autoincrement())
+  risk_context_id Int
+  name            String   @db.VarChar(100)
+  code            String   @db.VarChar(50)
+  description     String?  @db.Text
+  scale_min       Int      @default(1)
+  scale_max       Int      @default(5)
+  weight          Decimal? @db.Decimal(5, 2)
+  display_order   Int      @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext          RiskContext           @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  assetValuationScores AssetValuationScore[]
+
+  @@unique([risk_context_id, code])
+  @@index([risk_context_id])
+  @@map("valuation_criteria")
+}
+
+// ============================================
+// DOMAIN 3: ASSET MANAGEMENT
+// ============================================
+
+model Asset {
+  id              Int     @id @default(autoincrement())
+  uuid            String  @unique @default(uuid()) @db.VarChar(36)
+  organization_id Int
+  name            String  @db.VarChar(255)
+  code            String  @db.VarChar(100)
+  type            String  @db.VarChar(100)
+  category        String? @db.VarChar(100)
+  description     String? @db.Text
+  owner           String? @db.VarChar(255)
+  location        String? @db.VarChar(255)
+  status          String  @default("active") @db.VarChar(20)
+  metadata        Json?
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Restrict)
+  snapshots    AssetSnapshot[]
+
+  @@unique([organization_id, code])
+  @@index([organization_id, status])
+  @@index([type])
+  @@map("assets")
+}
+
+model AssetSnapshot {
+  id              Int      @id @default(autoincrement())
+  asset_id        Int
+  risk_context_id Int
+  overall_rating  Decimal? @db.Decimal(5, 2)
+  valuation_notes String?  @db.Text
+  is_critical     Boolean  @default(false)
+  valuation_date  DateTime @db.Date
+  metadata        Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  asset                Asset                 @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  riskContext          RiskContext           @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  assetValuationScores AssetValuationScore[]
+  risks                Risk[]
+
+  @@unique([asset_id, risk_context_id])
+  @@index([risk_context_id])
+  @@index([is_critical])
+  @@map("asset_snapshots")
+}
+
+model AssetValuationScore {
+  id                    Int     @id @default(autoincrement())
+  asset_snapshot_id     Int
+  valuation_criteria_id Int
+  rating                Int
+  rationale             String? @db.Text
+  evidence              String? @db.Text
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  assetSnapshot     AssetSnapshot     @relation(fields: [asset_snapshot_id], references: [id], onDelete: Cascade)
+  valuationCriteria ValuationCriteria @relation(fields: [valuation_criteria_id], references: [id], onDelete: Cascade)
+
+  @@unique([asset_snapshot_id, valuation_criteria_id])
+  @@index([asset_snapshot_id])
+  @@index([valuation_criteria_id])
+  @@map("asset_valuation_scores")
+}
+
+// ============================================
+// DOMAIN 4: RISK IDENTIFICATION & ASSESSMENT
+// ============================================
+
+model Risk {
+  id                Int     @id @default(autoincrement())
+  uuid              String  @unique @default(uuid()) @db.VarChar(36)
+  risk_context_id   Int
+  asset_snapshot_id Int?
+  risk_code         String  @db.VarChar(100)
+  title             String  @db.VarChar(255)
+  description       String  @db.Text
+  category          String? @db.VarChar(100)
+  source            String? @db.VarChar(255)
+  consequence       String? @db.Text
+  status            String  @default("identified") @db.VarChar(20)
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  riskContext   RiskContext      @relation(fields: [risk_context_id], references: [id], onDelete: Restrict)
+  assetSnapshot AssetSnapshot?   @relation(fields: [asset_snapshot_id], references: [id], onDelete: SetNull)
+  assessments   RiskAssessment[]
+  treatments    RiskTreatment[]
+  riskReviews   RiskReview[]
+
+  @@unique([risk_context_id, risk_code])
+  @@index([risk_context_id, status])
+  @@index([category])
+  @@map("risks")
+}
+
+model RiskAssessment {
+  id                      Int      @id @default(autoincrement())
+  risk_id                 Int
+  risk_context_id         Int
+  assessment_type         String   @db.VarChar(20)
+  assessment_date         DateTime @db.Date
+  likelihood_id           Int?
+  likelihood_rationale    String?  @db.Text
+  impact_assessments      Json
+  primary_impact_scale_id Int?
+  risk_level              String?  @db.VarChar(50)
+  risk_score              Decimal? @db.Decimal(8, 2)
+  notes                   String?  @db.Text
+  assessor_name           String?  @db.VarChar(255)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  risk                 Risk                   @relation(fields: [risk_id], references: [id], onDelete: Cascade)
+  riskContext          RiskContext            @relation(fields: [risk_context_id], references: [id], onDelete: Restrict)
+  controlEffectiveness ControlEffectiveness[]
+
+  @@index([risk_id, assessment_type])
+  @@index([risk_context_id])
+  @@index([assessment_date])
+  @@map("risk_assessments")
+}
+
+// ============================================
+// DOMAIN 5: CONTROL MANAGEMENT
+// ============================================
+
+model Control {
+  id                    Int     @id @default(autoincrement())
+  uuid                  String  @unique @default(uuid()) @db.VarChar(36)
+  organization_id       Int
+  control_code          String  @db.VarChar(100)
+  name                  String  @db.VarChar(255)
+  description           String? @db.Text
+  type                  String  @db.VarChar(50)
+  category              String? @db.VarChar(100)
+  control_owner         String? @db.VarChar(255)
+  implementation_status String  @default("planned") @db.VarChar(20)
+  metadata              Json?
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  organization  Organization           @relation(fields: [organization_id], references: [id], onDelete: Restrict)
+  effectiveness ControlEffectiveness[]
+
+  @@unique([organization_id, control_code])
+  @@index([organization_id, implementation_status])
+  @@index([type])
+  @@map("controls")
+}
+
+model ControlEffectiveness {
+  id                      Int       @id @default(autoincrement())
+  risk_assessment_id      Int
+  control_id              Int
+  effectiveness_rating    String    @db.VarChar(20)
+  design_effectiveness    String?   @db.VarChar(20)
+  operating_effectiveness String?   @db.VarChar(20)
+  testing_date            DateTime? @db.Date
+  testing_method          String?   @db.VarChar(255)
+  testing_results         String?   @db.Text
+  notes                   String?   @db.Text
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskAssessment RiskAssessment @relation(fields: [risk_assessment_id], references: [id], onDelete: Cascade)
+  control        Control        @relation(fields: [control_id], references: [id], onDelete: Restrict)
+
+  @@unique([risk_assessment_id, control_id])
+  @@index([control_id])
+  @@index([effectiveness_rating])
+  @@map("control_effectiveness")
+}
+
+// ============================================
+// DOMAIN 6: RISK TREATMENT & ACTION TRACKING
+// ============================================
+
+model RiskTreatment {
+  id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(uuid()) @db.VarChar(36)
+  risk_id           Int
+  treatment_type    String    @db.VarChar(50)
+  title             String    @db.VarChar(255)
+  description       String?   @db.Text
+  rationale         String?   @db.Text
+  priority          String?   @db.VarChar(20)
+  target_risk_level String?   @db.VarChar(50)
+  owner             String?   @db.VarChar(255)
+  estimated_cost    Decimal?  @db.Decimal(15, 2)
+  estimated_effort  String?   @db.VarChar(100)
+  status            String    @default("planned") @db.VarChar(20)
+  planned_start     DateTime? @db.Date
+  planned_end       DateTime? @db.Date
+  actual_start      DateTime? @db.Date
+  actual_end        DateTime? @db.Date
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  risk    Risk              @relation(fields: [risk_id], references: [id], onDelete: Cascade)
+  actions TreatmentAction[]
+
+  @@index([risk_id])
+  @@index([status])
+  @@index([priority])
+  @@map("risk_treatments")
+}
+
+model TreatmentAction {
+  id                  Int       @id @default(autoincrement())
+  uuid                String    @unique @default(uuid()) @db.VarChar(36)
+  risk_treatment_id   Int
+  action_code         String?   @db.VarChar(100)
+  title               String    @db.VarChar(255)
+  description         String?   @db.Text
+  assigned_to         String?   @db.VarChar(255)
+  priority            String?   @db.VarChar(20)
+  status              String    @default("pending") @db.VarChar(20)
+  due_date            DateTime? @db.Date
+  completed_date      DateTime? @db.Date
+  progress_percentage Int       @default(0)
+  notes               String?   @db.Text
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  created_by String    @db.VarChar(36)
+  updated_by String    @db.VarChar(36)
+  deleted_at DateTime?
+
+  riskTreatment RiskTreatment  @relation(fields: [risk_treatment_id], references: [id], onDelete: Cascade)
+  updates       ActionUpdate[]
+
+  @@index([risk_treatment_id])
+  @@index([status])
+  @@index([assigned_to])
+  @@index([due_date])
+  @@map("treatment_actions")
+}
+
+model ActionUpdate {
+  id                  Int     @id @default(autoincrement())
+  treatment_action_id Int
+  update_type         String  @db.VarChar(50)
+  update_text         String  @db.Text
+  old_status          String? @db.VarChar(20)
+  new_status          String? @db.VarChar(20)
+  progress_percentage Int?
+  attachments         Json?
+
+  created_at DateTime @default(now())
+  created_by String   @db.VarChar(36)
+
+  treatmentAction TreatmentAction @relation(fields: [treatment_action_id], references: [id], onDelete: Cascade)
+
+  @@index([treatment_action_id])
+  @@index([created_at])
+  @@map("action_updates")
+}
+
+// ============================================
+// DOMAIN 7: AUDIT & COMPLIANCE
+// ============================================
+
+model AuditLog {
+  id              Int     @id @default(autoincrement())
+  organization_id Int
+  entity_type     String  @db.VarChar(100)
+  entity_id       Int
+  entity_uuid     String? @db.VarChar(36)
+  action          String  @db.VarChar(50)
+  old_values      Json?
+  new_values      Json?
+  changed_fields  Json?
+  ip_address      String? @db.VarChar(45)
+  user_agent      String? @db.VarChar(500)
+  context_data    Json?
+
+  created_at DateTime @default(now())
+  created_by String   @db.VarChar(36)
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Restrict)
+
+  @@index([organization_id, entity_type, entity_id])
+  @@index([entity_type, created_at])
+  @@index([created_by])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model RiskReview {
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(uuid()) @db.VarChar(36)
+  risk_context_id  Int?
+  risk_id          Int?
+  review_type      String    @db.VarChar(50)
+  review_date      DateTime  @db.Date
+  reviewer_name    String?   @db.VarChar(255)
+  review_findings  String?   @db.Text
+  recommendations  String?   @db.Text
+  status           String    @default("scheduled") @db.VarChar(20)
+  next_review_date DateTime? @db.Date
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  riskContext RiskContext? @relation(fields: [risk_context_id], references: [id], onDelete: Cascade)
+  risk        Risk?        @relation(fields: [risk_id], references: [id], onDelete: Cascade)
+
+  @@index([risk_context_id, review_date])
+  @@index([risk_id, review_date])
+  @@index([status])
+  @@index([next_review_date])
+  @@map("risk_reviews")
+}
+
+// ============================================
+// DOMAIN 8: REFERENCE DATA
+// ============================================
+
+model ReferenceData {
+  id              Int     @id @default(autoincrement())
+  organization_id Int?
+  category        String  @db.VarChar(100)
+  code            String  @db.VarChar(100)
+  name            String  @db.VarChar(255)
+  description     String? @db.Text
+  parent_id       Int?
+  display_order   Int     @default(0)
+  is_active       Boolean @default(true)
+  metadata        Json?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  created_by String   @db.VarChar(36)
+  updated_by String   @db.VarChar(36)
+
+  parent   ReferenceData?  @relation("ReferenceHierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  children ReferenceData[] @relation("ReferenceHierarchy")
+
+  @@unique([organization_id, category, code])
+  @@index([category, is_active])
+  @@index([parent_id])
+  @@map("reference_data")
+}

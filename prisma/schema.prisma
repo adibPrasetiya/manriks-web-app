@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String     @id @default(cuid())
+  username           String     @unique @db.VarChar(255)
+  name               String     @db.VarChar(255)
+  email              String     @unique @db.VarChar(255)
+  password           String     @db.VarChar(255)
+  isActive           Boolean    @default(false)
+  isVerified         Boolean    @default(false)
+  passwordChangedAt  DateTime?
+  mustChangePassword Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  userRoles          UserRole[]
+  session            Session?
+  profile            Profile?
+
+  @@index([email])
+  @@index([username])
+  @@index([isActive, isVerified])
+  @@map("users")
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        RoleName   @unique
+  description String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userRoles   UserRole[] // Many-to-many dengan User
+
+  @@map("roles")
+}
+
+model UserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId     String
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String   @unique // User hanya bisa punya 1 session aktif
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique @db.VarChar(500) // Refresh token (hashed)
+  deviceId     String   @db.VarChar(255) // Device identifier untuk tracking
+  deviceName   String?  @db.VarChar(255) // Nama device (misal: "Chrome on Windows")
+  userAgent    String?  @db.Text // User agent string
+  ipAddress    String?  @db.VarChar(45) // IPv4 atau IPv6
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model UnitKerja {
+  id        String    @id @default(cuid())
+  name      String    @db.VarChar(255)
+  code      String    @unique @db.VarChar(100)
+  email     String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  profiles  Profile[]
+
+  @@index([code])
+  @@map("unit_kerja")
+}
+
+model Profile {
+  id          String     @id @default(cuid())
+  userId      String     @unique // One-to-one dengan User
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jabatan     String     @db.VarChar(255)
+  unitKerjaId String
+  unitKerja   UnitKerja  @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
+  email       String?    @db.VarChar(255) // Optional
+  nomorHP     String?    @db.VarChar(20) // Optional
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([unitKerjaId])
+  @@map("profiles")
+}
+
+enum RoleName {
+  USER
+  ADMINISTRATOR
+}
