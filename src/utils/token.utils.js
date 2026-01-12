@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { ACCESS_TOKEN_EXPIRY } from "../config/constant.js";
+import {
+  ACCESS_TOKEN_EXPIRY,
+  JWT_ACCESS_SECRET,
+  REFRESH_TOKEN_EXPIRY_HOURS,
+} from "../config/constant.js";
 
 /**
  * Generate JWT Access Token

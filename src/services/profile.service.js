@@ -1,7 +1,10 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
-import { createNewProfileSchema } from "../validations/profile.validation.js";
+import {
+  createNewProfileSchema,
+  updateProfileSchema,
+} from "../validations/profile.validation.js";
 import { userIdSchema } from "../validations/user.validation.js";
 
 const create = async (reqBody, userId) => {
@@ -58,4 +61,39 @@ const create = async (reqBody, userId) => {
   };
 };
 
-export default { create };
+const update = async (reqBody, userId) => {
+  reqBody = validate(updateProfileSchema, reqBody);
+  userId = validate(userIdSchema, userId);
+
+  const existingProfile = await prismaClient.profile.findUnique({
+    where: {
+      userId: userId,
+    },
+  });
+
+  if (!existingProfile) {
+    throw new ResponseError(
+      404,
+      `Profile dengan User ID ${userId} tidak ditemukan`
+    );
+  }
+
+  const updateProfile = await prismaClient.profile.update({
+    where: {
+      userId: userId,
+    },
+    data: reqBody,
+    select: {
+      jabatan: true,
+      unitKerja: true,
+      nomorHP: true,
+    },
+  });
+
+  return {
+    message: "Profile berhasil di perbarui",
+    data: updateProfile,
+  };
+};
+
+export default { create, update };

@@ -6,4 +6,9 @@ export const profileRoutes = [
     path: "/users/me/profile",
     handler: profileController.create,
   },
+  {
+    method: "patch",
+    path: "/users/me/profile",
+    handler: profileController.update,
+  },
 ];
