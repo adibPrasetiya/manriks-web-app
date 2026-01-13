@@ -7,6 +7,7 @@ export const NODE_ENV = process.env.NODE_ENV || "development";
 export const ROLES = {
   USER: "USER",
   ADMINISTRATOR: "ADMINISTRATOR",
+  KOMITE_PUSAT: "KOMITE_PUSAT",
 };
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS;
 export const JWT_ACCESS_SECRET =

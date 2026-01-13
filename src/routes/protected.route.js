@@ -3,10 +3,16 @@ import { authorize } from "../middlewares/authorization.middleware.js";
 import { userRoutes } from "./user.route.js";
 import { unitKerjaRoutes } from "./unit-kerja.route.js";
 import { profileRoutes } from "./profile.routes.js";
+import { konteksRoutes } from "./konteks.route.js";
 
 export const protectedRoute = Router();
 
-const routes = [...userRoutes, ...unitKerjaRoutes, ...profileRoutes];
+const routes = [
+  ...userRoutes,
+  ...unitKerjaRoutes,
+  ...profileRoutes,
+  ...konteksRoutes,
+];
 
 routes.forEach(({ method, path, handler, roles }) => {
   const middleware = [];

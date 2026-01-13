@@ -25,6 +25,15 @@ async function main() {
       description: "Role untuk administrator sistem",
     },
   });
+
+  const roleKomitePusat = await prisma.role.upsert({
+    where: { name: "KOMITE_PUSAT" },
+    update: {},
+    create: {
+      name: "KOMITE_PUSAT",
+      description: "Role untuk Komite Pusat yang dapat mengelola konteks manajemen risiko",
+    },
+  });
   console.log("✅ Roles berhasil di-seed\n");
 
   // 2. Seed Unit Kerja
@@ -86,6 +95,20 @@ async function main() {
         jabatan: "System Administrator",
         unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
         nomorHP: "081234567890",
+      },
+    },
+    {
+      username: "komite.pusat",
+      name: "Komite Pusat",
+      email: "komite.pusat@company.com",
+      password: hashedPassword,
+      isActive: true,
+      isVerified: true,
+      roleId: roleKomitePusat.id,
+      profile: {
+        jabatan: "Ketua Komite Pusat",
+        unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+        nomorHP: "081234567899",
       },
     },
     {
@@ -217,12 +240,13 @@ async function main() {
 
   console.log("\n✅ Seeding selesai!");
   console.log("\n📝 Credentials untuk testing:");
-  console.log("   • Username: admin | Password: password123");
-  console.log("   • Username: john.doe | Password: password123");
-  console.log("   • Username: jane.smith | Password: password123");
-  console.log("   • Username: bob.wilson | Password: password123");
-  console.log("   • Username: alice.brown | Password: password123");
-  console.log("   • Username: charlie.davis | Password: password123");
+  console.log("   • Username: admin | Password: password123 (ADMINISTRATOR)");
+  console.log("   • Username: komite.pusat | Password: password123 (KOMITE_PUSAT)");
+  console.log("   • Username: john.doe | Password: password123 (USER)");
+  console.log("   • Username: jane.smith | Password: password123 (USER)");
+  console.log("   • Username: bob.wilson | Password: password123 (USER)");
+  console.log("   • Username: alice.brown | Password: password123 (USER)");
+  console.log("   • Username: charlie.davis | Password: password123 (USER)");
 }
 
 main()
