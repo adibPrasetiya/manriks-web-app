@@ -77,7 +77,7 @@ export const authenticationMiddleware = async (req, res, next) => {
     // Check if user has profile
     if (!user.profile) {
       const isCreateProfileEndpoint =
-        req.method === "POST" && req.path === "/users/me/profile";
+        req.method === "POST" && req.path === "/users/me/profiles";
       const isLogoutEndpoint =
         req.method === "DELETE" && req.path === "/users/me/logout";
 
