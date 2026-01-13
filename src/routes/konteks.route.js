@@ -33,6 +33,12 @@ export const konteksRoutes = [
     roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
+    method: "patch",
+    path: "/konteks/:konteksId/deactivate",
+    handler: konteksController.deactivate,
+    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
+  },
+  {
     method: "delete",
     path: "/konteks/:konteksId",
     handler: konteksController.remove,

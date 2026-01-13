@@ -4,6 +4,7 @@ import { userRoutes } from "./user.route.js";
 import { unitKerjaRoutes } from "./unit-kerja.route.js";
 import { profileRoutes } from "./profile.routes.js";
 import { konteksRoutes } from "./konteks.route.js";
+import { riskCategoryRoutes } from "./risk-category.route.js";
 
 export const protectedRoute = Router();
 
@@ -12,6 +13,7 @@ const routes = [
   ...unitKerjaRoutes,
   ...profileRoutes,
   ...konteksRoutes,
+  ...riskCategoryRoutes,
 ];
 
 routes.forEach(({ method, path, handler, roles }) => {

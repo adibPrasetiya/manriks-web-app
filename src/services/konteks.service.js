@@ -363,6 +363,44 @@ const setActive = async (konteksId, userId) => {
   };
 };
 
+const deactivate = async (konteksId, userId) => {
+  const { konteksId: id } = validate(konteksIdSchema, { konteksId });
+
+  const konteks = await prismaClient.konteks.findUnique({
+    where: { id },
+  });
+
+  if (!konteks) {
+    throw new ResponseError(404, "Konteks tidak ditemukan.");
+  }
+
+  if (!konteks.isActive) {
+    throw new ResponseError(400, "Konteks ini sudah tidak aktif.");
+  }
+
+  // Simply deactivate this konteks (no mutual exclusion like setActive)
+  const deactivatedKonteks = await prismaClient.konteks.update({
+    where: { id },
+    data: { isActive: false, updatedBy: userId },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return {
+    message: "Konteks berhasil dinonaktifkan",
+    data: deactivatedKonteks,
+  };
+};
+
 const remove = async (konteksId) => {
   const { konteksId: id } = validate(konteksIdSchema, { konteksId });
 
@@ -396,5 +434,6 @@ export default {
   getById,
   update,
   setActive,
+  deactivate,
   remove,
 };

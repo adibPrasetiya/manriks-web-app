@@ -83,6 +83,22 @@ const setActive = async (req, res, next) => {
   }
 };
 
+const deactivate = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const result = await konteksService.deactivate(req.params.konteksId, userId);
+    res
+      .status(200)
+      .json({
+        message: result.message,
+        data: result.data,
+      })
+      .end();
+  } catch (error) {
+    next(error);
+  }
+};
+
 const remove = async (req, res, next) => {
   try {
     const result = await konteksService.remove(req.params.konteksId);
@@ -103,5 +119,6 @@ export default {
   getById,
   update,
   setActive,
+  deactivate,
   remove,
 };
