@@ -9,7 +9,7 @@ import { userIdSchema } from "../validations/user.validation.js";
 
 const create = async (reqBody, userId) => {
   reqBody = validate(createNewProfileSchema, reqBody);
-  userId = validate(userIdSchema, userId);
+  userId = validate(userIdSchema, { userId: userId });
 
   const existingProfile = await prismaClient.profile.findUnique({
     where: {
