@@ -42,9 +42,9 @@ const create = async (reqBody, userId) => {
       userId: userId.userId,
       jabatan: reqBody.jabatan,
       unitKerjaId: reqBody.unitKerjaId,
-      nomorHp:
-        reqBody.nomorHp && reqBody.nomorHp.trim() !== ""
-          ? reqBody.nomorHp
+      nomorHP:
+        reqBody.nomorHP && reqBody.nomorHP.trim() !== ""
+          ? reqBody.nomorHP
           : undefined,
     },
     select: {

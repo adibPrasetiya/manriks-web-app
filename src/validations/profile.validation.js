@@ -13,7 +13,7 @@ const createNewProfileSchema = Joi.object({
     "any.required": "ID unit kerja wajib diisi",
   }),
 
-  nomorHp: Joi.string()
+  nomorHP: Joi.string()
     .pattern(/^(08|62)[0-9]{8,13}$/)
     .optional()
     .allow(null, "")
@@ -34,7 +34,7 @@ const updateProfileSchema = Joi.object({
     "any.required": "ID unit kerja wajib diisi",
   }),
 
-  nomorHp: Joi.string()
+  nomorHP: Joi.string()
     .pattern(/^(08|62)[0-9]{8,13}$/)
     .optional()
     .allow(null, "")
