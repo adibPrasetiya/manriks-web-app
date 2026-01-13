@@ -39,7 +39,7 @@ const create = async (reqBody, userId) => {
 
   const profile = await prismaClient.profile.create({
     data: {
-      userId: userId,
+      userId: userId.userId,
       jabatan: reqBody.jabatan,
       unitKerjaId: reqBody.unitKerjaId,
       nomorHp:
@@ -80,7 +80,7 @@ const update = async (reqBody, userId) => {
 
   const updateProfile = await prismaClient.profile.update({
     where: {
-      userId: userId,
+      userId: userId.userId,
     },
     data: reqBody,
     select: {
