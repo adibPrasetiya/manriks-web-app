@@ -7,7 +7,7 @@ const routes = [
   {
     method: "post",
     path: "/users",
-    handler: userController.login,
+    handler: userController.registration,
   },
   {
     method: "post",
