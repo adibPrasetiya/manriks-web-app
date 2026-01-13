@@ -85,7 +85,6 @@ async function main() {
       profile: {
         jabatan: "System Administrator",
         unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-        email: "admin.personal@gmail.com",
         nomorHP: "081234567890",
       },
     },
@@ -100,7 +99,6 @@ async function main() {
       profile: {
         jabatan: "IT Manager",
         unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-        email: "john.doe.personal@gmail.com",
         nomorHP: "081234567891",
       },
     },
@@ -115,7 +113,6 @@ async function main() {
       profile: {
         jabatan: "Finance Manager",
         unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
-        email: "jane.smith.personal@gmail.com",
         nomorHP: "081234567892",
       },
     },
@@ -130,7 +127,6 @@ async function main() {
       profile: {
         jabatan: "HR Manager",
         unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
-        email: null, // Optional - tidak diisi
         nomorHP: "081234567893",
       },
     },
@@ -145,7 +141,6 @@ async function main() {
       profile: {
         jabatan: "Operations Supervisor",
         unitKerjaId: unitKerjaRecords[3].id, // Operasional
-        email: "alice.personal@gmail.com",
         nomorHP: null, // Optional - tidak diisi
       },
     },
@@ -160,7 +155,6 @@ async function main() {
       profile: {
         jabatan: "Marketing Executive",
         unitKerjaId: unitKerjaRecords[4].id, // Pemasaran & Komunikasi
-        email: null,
         nomorHP: null,
       },
     },

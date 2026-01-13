@@ -13,7 +13,7 @@ const create = async (reqBody, userId) => {
 
   const existingProfile = await prismaClient.profile.findUnique({
     where: {
-      userId: userId,
+      userId: userId.userId,
     },
   });
 
@@ -63,11 +63,11 @@ const create = async (reqBody, userId) => {
 
 const update = async (reqBody, userId) => {
   reqBody = validate(updateProfileSchema, reqBody);
-  userId = validate(userIdSchema, userId);
+  userId = validate(userIdSchema, { userId: userId });
 
   const existingProfile = await prismaClient.profile.findUnique({
     where: {
-      userId: userId,
+      userId: userId.userId,
     },
   });
 

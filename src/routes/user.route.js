@@ -18,4 +18,10 @@ export const userRoutes = [
     handler: userController.search,
     roles: [ROLES.ADMINISTRATOR],
   },
+  {
+    method: "patch",
+    path: "/users/:userId",
+    handler: userController.updateByAdmin,
+    roles: [ROLES.ADMINISTRATOR],
+  },
 ];

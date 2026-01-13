@@ -141,6 +141,55 @@ const userIdSchema = Joi.object({
   }),
 });
 
+const updateUserByAdminSchema = Joi.object({
+  name: Joi.string().min(2).max(255).messages({
+    "string.empty": "Nama tidak boleh kosong",
+    "string.min": "Nama minimal 2 karakter",
+    "string.max": "Nama maksimal 255 karakter",
+  }),
+
+  email: Joi.string().email().max(255).messages({
+    "string.empty": "Email tidak boleh kosong",
+    "string.email": "Format email tidak valid",
+    "string.max": "Email maksimal 255 karakter",
+  }),
+
+  username: Joi.string()
+    .min(3)
+    .max(255)
+    .pattern(/^[a-zA-Z0-9_]+$/)
+    .messages({
+      "string.empty": "Username tidak boleh kosong",
+      "string.min": "Username minimal 3 karakter",
+      "string.max": "Username maksimal 255 karakter",
+      "string.pattern.base":
+        "Username hanya boleh berisi huruf, angka, dan underscore",
+    }),
+
+  isActive: Joi.boolean().messages({
+    "boolean.base": "isActive harus berupa boolean (true/false)",
+  }),
+
+  isVerified: Joi.boolean().messages({
+    "boolean.base": "isVerified harus berupa boolean (true/false)",
+  }),
+
+  roles: Joi.array()
+    .items(Joi.string().valid("USER", "ADMINISTRATOR"))
+    .min(1)
+    .unique()
+    .messages({
+      "array.base": "Roles harus berupa array",
+      "array.min": "Minimal harus ada 1 role",
+      "array.unique": "Roles tidak boleh duplikat",
+      "any.only": "Role harus salah satu dari: USER, ADMINISTRATOR",
+    }),
+})
+  .min(1)
+  .messages({
+    "object.min": "Minimal harus ada 1 field yang diupdate",
+  });
+
 export {
   registedNewUserSchema,
   loginSchema,
@@ -148,4 +197,5 @@ export {
   refreshTokenSchema,
   updatePasswordSchema,
   userIdSchema,
+  updateUserByAdminSchema,
 };

@@ -7,6 +7,8 @@ import {
   registedNewUserSchema,
   searchUserSchema,
   updatePasswordSchema,
+  userIdSchema,
+  updateUserByAdminSchema,
 } from "../validations/user.validation.js";
 import {
   generateAccessToken,
@@ -437,6 +439,154 @@ const logout = async (userId) => {
   };
 };
 
+const updateByAdmin = async (userId, reqBody) => {
+  // Step 1: Validate userId parameter
+  const idParams = validate(userIdSchema, { userId });
+
+  // Step 2: Validate request body
+  reqBody = validate(updateUserByAdminSchema, reqBody);
+
+  // Step 3: Check if user exists
+  const existingUser = await prismaClient.user.findUnique({
+    where: {
+      id: idParams.userId,
+    },
+    include: {
+      userRoles: {
+        include: {
+          role: true,
+        },
+      },
+    },
+  });
+
+  if (!existingUser) {
+    throw new ResponseError(404, "User tidak ditemukan.");
+  }
+
+  // Step 4: Check email conflict (if email is being updated)
+  if (reqBody.email && reqBody.email !== existingUser.email) {
+    const emailExists = await prismaClient.user.findUnique({
+      where: {
+        email: reqBody.email,
+      },
+    });
+
+    if (emailExists) {
+      throw new ResponseError(
+        409,
+        `Email ${reqBody.email} sudah digunakan oleh user lain.`
+      );
+    }
+  }
+
+  // Step 5: Check username conflict (if username is being updated)
+  if (reqBody.username && reqBody.username !== existingUser.username) {
+    const usernameExists = await prismaClient.user.findUnique({
+      where: {
+        username: reqBody.username,
+      },
+    });
+
+    if (usernameExists) {
+      throw new ResponseError(
+        409,
+        `Username ${reqBody.username} sudah digunakan oleh user lain.`
+      );
+    }
+  }
+
+  // Step 6: Separate roles from user data
+  const { roles, ...userData } = reqBody;
+
+  // Step 7: Execute transaction for user update and role updates
+  const updatedUser = await prismaClient.$transaction(async (tx) => {
+    // Update user basic data
+    const user = await tx.user.update({
+      where: {
+        id: idParams.userId,
+      },
+      data: userData,
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        isActive: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    // Handle role updates if roles array is provided
+    if (roles && Array.isArray(roles)) {
+      // Delete existing roles
+      await tx.userRole.deleteMany({
+        where: {
+          userId: idParams.userId,
+        },
+      });
+
+      // Fetch role IDs from role names
+      const roleRecords = await tx.role.findMany({
+        where: {
+          name: {
+            in: roles,
+          },
+        },
+      });
+
+      if (roleRecords.length !== roles.length) {
+        throw new ResponseError(
+          400,
+          "Beberapa role yang diberikan tidak valid."
+        );
+      }
+
+      // Create new role assignments
+      await tx.userRole.createMany({
+        data: roleRecords.map((role) => ({
+          userId: idParams.userId,
+          roleId: role.id,
+        })),
+      });
+    }
+
+    // Fetch updated user with roles
+    const userWithRoles = await tx.user.findUnique({
+      where: {
+        id: idParams.userId,
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return userWithRoles;
+  });
+
+  // Step 8: Format response
+  return {
+    message: "User berhasil diperbarui",
+    data: {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      isActive: updatedUser.isActive,
+      isVerified: updatedUser.isVerified,
+      roles: updatedUser.userRoles.map((ur) => ur.role.name),
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
+    },
+  };
+};
+
 export default {
   registration,
   login,
@@ -444,4 +594,5 @@ export default {
   updatePassword,
   refreshToken,
   logout,
+  updateByAdmin,
 };
