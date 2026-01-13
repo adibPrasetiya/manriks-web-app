@@ -11,12 +11,12 @@ const routes = [
   },
   {
     method: "post",
-    path: "/user/login",
+    path: "/users/login",
     handler: userController.login,
   },
   {
     method: "post",
-    path: "user/refersh-token",
+    path: "users/refersh-token",
     handler: userController.refreshToken,
   },
 ];

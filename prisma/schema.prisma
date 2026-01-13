@@ -86,15 +86,15 @@ model UnitKerja {
 }
 
 model Profile {
-  id          String     @id @default(cuid())
-  userId      String     @unique // One-to-one dengan User
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jabatan     String     @db.VarChar(255)
+  id          String    @id @default(cuid())
+  userId      String    @unique // One-to-one dengan User
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jabatan     String    @db.VarChar(255)
   unitKerjaId String
-  unitKerja   UnitKerja  @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
-  nomorHP     String?    @db.VarChar(20) // Optional
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  unitKerja   UnitKerja @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
+  nomorHP     String?   @db.VarChar(20) // Optional
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([userId])
   @@index([unitKerjaId])
