@@ -16,7 +16,7 @@ const routes = [
   },
   {
     method: "post",
-    path: "users/refresh-token",
+    path: "/users/refresh-token",
     handler: userController.refreshToken,
   },
 ];
