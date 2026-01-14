@@ -12,13 +12,11 @@ export const likelihoodScaleRoutes = [
     method: "get",
     path: "/konteks/:konteksId/likelihood-scales",
     handler: likelihoodScaleController.search,
-    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "get",
     path: "/konteks/:konteksId/likelihood-scales/:id",
     handler: likelihoodScaleController.getById,
-    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "patch",
