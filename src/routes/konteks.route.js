@@ -12,13 +12,11 @@ export const konteksRoutes = [
     method: "get",
     path: "/konteks",
     handler: konteksController.search,
-    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "get",
     path: "/konteks/:konteksId",
     handler: konteksController.getById,
-    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "patch",

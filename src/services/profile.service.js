@@ -78,6 +78,19 @@ const update = async (reqBody, userId) => {
     );
   }
 
+  const existingUnitKerja = await prismaClient.unitKerja.findUnique({
+    where: {
+      id: reqBody.unitKerjaId,
+    },
+  });
+
+  if (!existingUnitKerja) {
+    throw new ResponseError(
+      404,
+      `Unit Kerja dengan ID ${reqBody.unitKerjaId} tidak ditemukan`
+    );
+  }
+
   const updateProfile = await prismaClient.profile.update({
     where: {
       userId: userId.userId,
