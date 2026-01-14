@@ -2,13 +2,13 @@ import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
 import {
-  createLikelihoodScaleSchema,
-  updateLikelihoodScaleSchema,
-  searchLikelihoodScaleSchema,
-  likelihoodScaleIdSchema,
+  createImpactScaleSchema,
+  updateImpactScaleSchema,
+  searchImpactScaleSchema,
+  impactScaleIdSchema,
   konteksIdSchema,
   riskCategoryIdSchema,
-} from "../validations/likelihood-scale.validation.js";
+} from "../validations/impact-scale.validation.js";
 
 const create = async (konteksId, riskCategoryId, reqBody) => {
   // Validate konteksId and riskCategoryId
@@ -21,7 +21,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   );
 
   // Validate request body
-  reqBody = validate(createLikelihoodScaleSchema, reqBody);
+  reqBody = validate(createImpactScaleSchema, reqBody);
 
   // Check if risk category exists AND belongs to konteks (security check)
   const riskCategory = await prismaClient.riskCategory.findFirst({
@@ -39,7 +39,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   }
 
   // Check unique constraint (riskCategoryId, level)
-  const existingScale = await prismaClient.likelihoodScale.findFirst({
+  const existingScale = await prismaClient.impactScale.findFirst({
     where: {
       riskCategoryId: validatedRiskCategoryId,
       level: reqBody.level,
@@ -53,8 +53,8 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
     );
   }
 
-  // Create likelihood scale
-  const likelihoodScale = await prismaClient.likelihoodScale.create({
+  // Create impact scale
+  const impactScale = await prismaClient.impactScale.create({
     data: {
       riskCategoryId: validatedRiskCategoryId,
       level: reqBody.level,
@@ -90,8 +90,8 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   });
 
   return {
-    message: "Skala kemungkinan berhasil dibuat",
-    data: likelihoodScale,
+    message: "Skala dampak berhasil dibuat",
+    data: impactScale,
   };
 };
 
@@ -106,7 +106,7 @@ const search = async (konteksId, riskCategoryId, queryParams) => {
   );
 
   // Validate query parameters
-  const params = validate(searchLikelihoodScaleSchema, queryParams);
+  const params = validate(searchImpactScaleSchema, queryParams);
   const { page, limit } = params;
 
   // Check if risk category exists AND belongs to konteks (security check)
@@ -131,9 +131,9 @@ const search = async (konteksId, riskCategoryId, queryParams) => {
 
   const skip = (page - 1) * limit;
 
-  const totalItems = await prismaClient.likelihoodScale.count({ where });
+  const totalItems = await prismaClient.impactScale.count({ where });
 
-  const likelihoodScales = await prismaClient.likelihoodScale.findMany({
+  const impactScales = await prismaClient.impactScale.findMany({
     where,
     skip,
     take: limit,
@@ -169,8 +169,8 @@ const search = async (konteksId, riskCategoryId, queryParams) => {
   const totalPages = Math.ceil(totalItems / limit);
 
   return {
-    message: "Skala kemungkinan berhasil ditemukan",
-    data: likelihoodScales,
+    message: "Skala dampak berhasil ditemukan",
+    data: impactScales,
     pagination: {
       page,
       limit,
@@ -191,7 +191,7 @@ const getById = async (konteksId, riskCategoryId, id) => {
     riskCategoryIdSchema,
     { riskCategoryId }
   );
-  const { id: validatedId } = validate(likelihoodScaleIdSchema, { id });
+  const { id: validatedId } = validate(impactScaleIdSchema, { id });
 
   // Check if risk category exists AND belongs to konteks (security check)
   const riskCategory = await prismaClient.riskCategory.findFirst({
@@ -208,7 +208,7 @@ const getById = async (konteksId, riskCategoryId, id) => {
     );
   }
 
-  const likelihoodScale = await prismaClient.likelihoodScale.findUnique({
+  const impactScale = await prismaClient.impactScale.findUnique({
     where: { id: validatedId },
     select: {
       id: true,
@@ -238,18 +238,18 @@ const getById = async (konteksId, riskCategoryId, id) => {
     },
   });
 
-  if (!likelihoodScale) {
-    throw new ResponseError(404, "Skala kemungkinan tidak ditemukan.");
+  if (!impactScale) {
+    throw new ResponseError(404, "Skala dampak tidak ditemukan.");
   }
 
   // Verify scale belongs to the specified riskCategoryId (security check)
-  if (likelihoodScale.riskCategoryId !== validatedRiskCategoryId) {
-    throw new ResponseError(404, "Skala kemungkinan tidak ditemukan.");
+  if (impactScale.riskCategoryId !== validatedRiskCategoryId) {
+    throw new ResponseError(404, "Skala dampak tidak ditemukan.");
   }
 
   return {
-    message: "Skala kemungkinan berhasil ditemukan",
-    data: likelihoodScale,
+    message: "Skala dampak berhasil ditemukan",
+    data: impactScale,
   };
 };
 
@@ -262,8 +262,8 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     riskCategoryIdSchema,
     { riskCategoryId }
   );
-  const { id: validatedId } = validate(likelihoodScaleIdSchema, { id });
-  reqBody = validate(updateLikelihoodScaleSchema, reqBody);
+  const { id: validatedId } = validate(impactScaleIdSchema, { id });
+  reqBody = validate(updateImpactScaleSchema, reqBody);
 
   // Check if risk category exists AND belongs to konteks (security check)
   const riskCategory = await prismaClient.riskCategory.findFirst({
@@ -280,23 +280,23 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     );
   }
 
-  // Check if likelihood scale exists
-  const existingScale = await prismaClient.likelihoodScale.findUnique({
+  // Check if impact scale exists
+  const existingScale = await prismaClient.impactScale.findUnique({
     where: { id: validatedId },
   });
 
   if (!existingScale) {
-    throw new ResponseError(404, "Skala kemungkinan tidak ditemukan.");
+    throw new ResponseError(404, "Skala dampak tidak ditemukan.");
   }
 
   // Verify scale belongs to the specified riskCategoryId (security check)
   if (existingScale.riskCategoryId !== validatedRiskCategoryId) {
-    throw new ResponseError(404, "Skala kemungkinan tidak ditemukan.");
+    throw new ResponseError(404, "Skala dampak tidak ditemukan.");
   }
 
   // If level is being updated, check uniqueness
   if (reqBody.level && reqBody.level !== existingScale.level) {
-    const levelExists = await prismaClient.likelihoodScale.findFirst({
+    const levelExists = await prismaClient.impactScale.findFirst({
       where: {
         riskCategoryId: validatedRiskCategoryId,
         level: reqBody.level,
@@ -312,8 +312,8 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     }
   }
 
-  // Update likelihood scale
-  const updatedScale = await prismaClient.likelihoodScale.update({
+  // Update impact scale
+  const updatedScale = await prismaClient.impactScale.update({
     where: { id: validatedId },
     data: reqBody,
     select: {
@@ -345,7 +345,7 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
   });
 
   return {
-    message: "Skala kemungkinan berhasil diperbarui",
+    message: "Skala dampak berhasil diperbarui",
     data: updatedScale,
   };
 };
@@ -359,7 +359,7 @@ const remove = async (konteksId, riskCategoryId, id) => {
     riskCategoryIdSchema,
     { riskCategoryId }
   );
-  const { id: validatedId } = validate(likelihoodScaleIdSchema, { id });
+  const { id: validatedId } = validate(impactScaleIdSchema, { id });
 
   // Check if risk category exists AND belongs to konteks (security check)
   const riskCategory = await prismaClient.riskCategory.findFirst({
@@ -376,43 +376,43 @@ const remove = async (konteksId, riskCategoryId, id) => {
     );
   }
 
-  // Check if likelihood scale exists
-  const existingScale = await prismaClient.likelihoodScale.findUnique({
+  // Check if impact scale exists
+  const existingScale = await prismaClient.impactScale.findUnique({
     where: { id: validatedId },
   });
 
   if (!existingScale) {
-    throw new ResponseError(404, "Skala kemungkinan tidak ditemukan.");
+    throw new ResponseError(404, "Skala dampak tidak ditemukan.");
   }
 
   // Verify scale belongs to the specified riskCategoryId (security check)
   if (existingScale.riskCategoryId !== validatedRiskCategoryId) {
-    throw new ResponseError(404, "Skala kemungkinan tidak ditemukan.");
+    throw new ResponseError(404, "Skala dampak tidak ditemukan.");
   }
 
   // Check referential integrity
-  // NOTE: Based on current schema, there are no foreign key references to LikelihoodScale
-  // If in the future there are tables like RiskMatrix that reference LikelihoodScale,
+  // NOTE: Based on current schema, there are no foreign key references to ImpactScale
+  // If in the future there are tables like RiskMatrix that reference ImpactScale,
   // add checks here similar to risk-category.service.js:
   //
   // const riskMatrixCount = await prismaClient.riskMatrix.count({
-  //   where: { likelihoodScaleId: validatedId },
+  //   where: { impactScaleId: validatedId },
   // });
   //
   // if (riskMatrixCount > 0) {
   //   throw new ResponseError(
   //     409,
-  //     `Skala kemungkinan tidak dapat dihapus karena masih digunakan dalam ${riskMatrixCount} matriks risiko.`
+  //     `Skala dampak tidak dapat dihapus karena masih digunakan dalam ${riskMatrixCount} matriks risiko.`
   //   );
   // }
 
-  // Delete likelihood scale
-  await prismaClient.likelihoodScale.delete({
+  // Delete impact scale
+  await prismaClient.impactScale.delete({
     where: { id: validatedId },
   });
 
   return {
-    message: "Skala kemungkinan berhasil dihapus",
+    message: "Skala dampak berhasil dihapus",
   };
 };
 

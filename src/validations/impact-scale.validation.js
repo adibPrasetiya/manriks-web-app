@@ -1,6 +1,6 @@
 import Joi from "joi";
 
-const createLikelihoodScaleSchema = Joi.object({
+const createImpactScaleSchema = Joi.object({
   level: Joi.number().integer().min(1).required().messages({
     "number.base": "Level harus berupa angka",
     "number.integer": "Level harus berupa bilangan bulat",
@@ -21,7 +21,7 @@ const createLikelihoodScaleSchema = Joi.object({
   }),
 });
 
-const updateLikelihoodScaleSchema = Joi.object({
+const updateImpactScaleSchema = Joi.object({
   level: Joi.number().integer().min(1).messages({
     "number.base": "Level harus berupa angka",
     "number.integer": "Level harus berupa bilangan bulat",
@@ -43,7 +43,7 @@ const updateLikelihoodScaleSchema = Joi.object({
     "object.min": "Minimal harus ada 1 field yang diupdate",
   });
 
-const searchLikelihoodScaleSchema = Joi.object({
+const searchImpactScaleSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1).messages({
     "number.base": "Page harus berupa angka",
     "number.integer": "Page harus berupa bilangan bulat",
@@ -58,10 +58,10 @@ const searchLikelihoodScaleSchema = Joi.object({
   }),
 });
 
-const likelihoodScaleIdSchema = Joi.object({
+const impactScaleIdSchema = Joi.object({
   id: Joi.string().required().messages({
-    "string.empty": "ID skala kemungkinan tidak boleh kosong",
-    "any.required": "ID skala kemungkinan wajib diisi",
+    "string.empty": "ID skala dampak tidak boleh kosong",
+    "any.required": "ID skala dampak wajib diisi",
   }),
 });
 
@@ -80,10 +80,10 @@ const riskCategoryIdSchema = Joi.object({
 });
 
 export {
-  createLikelihoodScaleSchema,
-  updateLikelihoodScaleSchema,
-  searchLikelihoodScaleSchema,
-  likelihoodScaleIdSchema,
+  createImpactScaleSchema,
+  updateImpactScaleSchema,
+  searchImpactScaleSchema,
+  impactScaleIdSchema,
   konteksIdSchema,
   riskCategoryIdSchema,
 };

@@ -4,29 +4,29 @@ import { ROLES } from "../config/constant.js";
 export const likelihoodScaleRoutes = [
   {
     method: "post",
-    path: "/konteks/:konteksId/likelihood-scales",
+    path: "/konteks/:konteksId/risk-categories/:riskCategoryId/likelihood-scales",
     handler: likelihoodScaleController.create,
     roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "get",
-    path: "/konteks/:konteksId/likelihood-scales",
+    path: "/konteks/:konteksId/risk-categories/:riskCategoryId/likelihood-scales",
     handler: likelihoodScaleController.search,
   },
   {
     method: "get",
-    path: "/konteks/:konteksId/likelihood-scales/:id",
+    path: "/konteks/:konteksId/risk-categories/:riskCategoryId/likelihood-scales/:id",
     handler: likelihoodScaleController.getById,
   },
   {
     method: "patch",
-    path: "/konteks/:konteksId/likelihood-scales/:id",
+    path: "/konteks/:konteksId/risk-categories/:riskCategoryId/likelihood-scales/:id",
     handler: likelihoodScaleController.update,
     roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "delete",
-    path: "/konteks/:konteksId/likelihood-scales/:id",
+    path: "/konteks/:konteksId/risk-categories/:riskCategoryId/likelihood-scales/:id",
     handler: likelihoodScaleController.remove,
     roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },

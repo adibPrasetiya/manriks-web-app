@@ -132,8 +132,6 @@ model Konteks {
 
   // Relations
   riskCategories   RiskCategory[]
-  likelihoodScales LikelihoodScale[]
-  impactScales     ImpactScale[]
   riskMatrices     RiskMatrix[]
 
   @@index([code])
@@ -154,15 +152,19 @@ model RiskCategory {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Relations
+  likelihoodScales LikelihoodScale[]
+  impactScales     ImpactScale[]
+
   @@index([konteksId])
   @@index([konteksId, order])
   @@map("risk_categories")
 }
 
 model LikelihoodScale {
-  id          String   @id @default(cuid())
-  konteksId   String
-  konteks     Konteks  @relation(fields: [konteksId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  riskCategoryId String
+  riskCategory   RiskCategory @relation(fields: [riskCategoryId], references: [id], onDelete: Cascade)
 
   level       Int      // 1, 2, 3, 4, 5 (or 1-10)
   label       String   @db.VarChar(100)  // e.g., "Sangat Jarang", "Jarang"
@@ -171,15 +173,15 @@ model LikelihoodScale {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([konteksId, level])  // Each level must be unique per konteks
-  @@index([konteksId])
+  @@unique([riskCategoryId, level])  // Each level must be unique per risk category
+  @@index([riskCategoryId])
   @@map("likelihood_scales")
 }
 
 model ImpactScale {
-  id          String   @id @default(cuid())
-  konteksId   String
-  konteks     Konteks  @relation(fields: [konteksId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  riskCategoryId String
+  riskCategory   RiskCategory @relation(fields: [riskCategoryId], references: [id], onDelete: Cascade)
 
   level       Int      // 1, 2, 3, 4, 5 (or 1-10)
   label       String   @db.VarChar(100)  // e.g., "Tidak Signifikan", "Minor"
@@ -188,8 +190,8 @@ model ImpactScale {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([konteksId, level])  // Each level must be unique per konteks
-  @@index([konteksId])
+  @@unique([riskCategoryId, level])  // Each level must be unique per risk category
+  @@index([riskCategoryId])
   @@map("impact_scales")
 }
 

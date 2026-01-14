@@ -1,14 +1,9 @@
-import likelihoodScaleService from "../services/likelihood-scale.service.js";
+import riskMatrixService from "../services/risk-matrix.service.js";
 
 const create = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
-    const riskCategoryId = req.params.riskCategoryId;
-    const result = await likelihoodScaleService.create(
-      konteksId,
-      riskCategoryId,
-      req.body
-    );
+    const result = await riskMatrixService.create(konteksId, req.body);
     res
       .status(201)
       .json({
@@ -24,12 +19,7 @@ const create = async (req, res, next) => {
 const search = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
-    const riskCategoryId = req.params.riskCategoryId;
-    const result = await likelihoodScaleService.search(
-      konteksId,
-      riskCategoryId,
-      req.query
-    );
+    const result = await riskMatrixService.search(konteksId, req.query);
     res
       .status(200)
       .json({
@@ -46,13 +36,8 @@ const search = async (req, res, next) => {
 const getById = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
-    const riskCategoryId = req.params.riskCategoryId;
     const id = req.params.id;
-    const result = await likelihoodScaleService.getById(
-      konteksId,
-      riskCategoryId,
-      id
-    );
+    const result = await riskMatrixService.getById(konteksId, id);
     res
       .status(200)
       .json({
@@ -68,14 +53,8 @@ const getById = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
-    const riskCategoryId = req.params.riskCategoryId;
     const id = req.params.id;
-    const result = await likelihoodScaleService.update(
-      konteksId,
-      riskCategoryId,
-      id,
-      req.body
-    );
+    const result = await riskMatrixService.update(konteksId, id, req.body);
     res
       .status(200)
       .json({
@@ -91,13 +70,8 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
-    const riskCategoryId = req.params.riskCategoryId;
     const id = req.params.id;
-    const result = await likelihoodScaleService.remove(
-      konteksId,
-      riskCategoryId,
-      id
-    );
+    const result = await riskMatrixService.remove(konteksId, id);
     res
       .status(200)
       .json({

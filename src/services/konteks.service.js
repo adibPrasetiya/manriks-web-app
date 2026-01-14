@@ -50,92 +50,35 @@ const create = async (reqBody, userId) => {
     );
   }
 
-  // Extract related data
-  const {
-    riskCategories,
-    likelihoodScales,
-    impactScales,
-    riskMatrices,
-    ...konteksData
-  } = reqBody;
-
-  // Use transaction to create konteks and all related records
-  const konteks = await prismaClient.$transaction(async (tx) => {
-    // Create Konteks
-    const newKonteks = await tx.konteks.create({
-      data: {
-        ...konteksData,
-        createdBy: userId,
-        updatedBy: userId,
-      },
-    });
-
-    // Create Risk Categories if provided
-    if (riskCategories && riskCategories.length > 0) {
-      await tx.riskCategory.createMany({
-        data: riskCategories.map((cat) => ({
-          konteksId: newKonteks.id,
-          name: cat.name,
-          description: cat.description || null,
-          order: cat.order || 0,
-        })),
-      });
-    }
-
-    // Create Likelihood Scales if provided
-    if (likelihoodScales && likelihoodScales.length > 0) {
-      await tx.likelihoodScale.createMany({
-        data: likelihoodScales.map((scale) => ({
-          konteksId: newKonteks.id,
-          level: scale.level,
-          label: scale.label,
-          description: scale.description,
-        })),
-      });
-    }
-
-    // Create Impact Scales if provided
-    if (impactScales && impactScales.length > 0) {
-      await tx.impactScale.createMany({
-        data: impactScales.map((scale) => ({
-          konteksId: newKonteks.id,
-          level: scale.level,
-          label: scale.label,
-          description: scale.description,
-        })),
-      });
-    }
-
-    // Create Risk Matrices if provided
-    if (riskMatrices && riskMatrices.length > 0) {
-      await tx.riskMatrix.createMany({
-        data: riskMatrices.map((matrix) => ({
-          konteksId: newKonteks.id,
-          likelihoodLevel: matrix.likelihoodLevel,
-          impactLevel: matrix.impactLevel,
-          riskLevel: matrix.riskLevel,
-        })),
-      });
-    }
-
-    // Fetch complete konteks with relations
-    return await tx.konteks.findUnique({
-      where: { id: newKonteks.id },
-      include: {
-        riskCategories: {
-          orderBy: { order: "asc" },
-        },
-        likelihoodScales: {
-          orderBy: { level: "asc" },
-        },
-        impactScales: {
-          orderBy: { level: "asc" },
-        },
-        riskMatrices: {
-          orderBy: [{ likelihoodLevel: "asc" }, { impactLevel: "asc" }],
-        },
-      },
-    });
+  // Create konteks only - no nested entities
+  const konteks = await prismaClient.konteks.create({
+    data: {
+      name: reqBody.name,
+      code: reqBody.code,
+      description: reqBody.description || null,
+      periodStart: reqBody.periodStart,
+      periodEnd: reqBody.periodEnd,
+      riskAppetiteLevel: reqBody.riskAppetiteLevel || null,
+      riskAppetiteDescription: reqBody.riskAppetiteDescription || null,
+      isActive: reqBody.isActive || false,
+      createdBy: userId,
+      updatedBy: userId,
+    },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      riskAppetiteLevel: true,
+      riskAppetiteDescription: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
+    },
   });
 
   return {
@@ -179,19 +122,20 @@ const search = async (queryParams) => {
     skip,
     take: limit,
     orderBy: { createdAt: "desc" },
-    include: {
-      riskCategories: {
-        orderBy: { order: "asc" },
-      },
-      likelihoodScales: {
-        orderBy: { level: "asc" },
-      },
-      impactScales: {
-        orderBy: { level: "asc" },
-      },
-      riskMatrices: {
-        orderBy: [{ likelihoodLevel: "asc" }, { impactLevel: "asc" }],
-      },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      riskAppetiteLevel: true,
+      riskAppetiteDescription: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
     },
   });
 
@@ -216,19 +160,20 @@ const getById = async (konteksId) => {
 
   const konteks = await prismaClient.konteks.findUnique({
     where: { id },
-    include: {
-      riskCategories: {
-        orderBy: { order: "asc" },
-      },
-      likelihoodScales: {
-        orderBy: { level: "asc" },
-      },
-      impactScales: {
-        orderBy: { level: "asc" },
-      },
-      riskMatrices: {
-        orderBy: [{ likelihoodLevel: "asc" }, { impactLevel: "asc" }],
-      },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      riskAppetiteLevel: true,
+      riskAppetiteDescription: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
     },
   });
 
@@ -293,19 +238,20 @@ const update = async (konteksId, reqBody, userId) => {
       ...reqBody,
       updatedBy: userId,
     },
-    include: {
-      riskCategories: {
-        orderBy: { order: "asc" },
-      },
-      likelihoodScales: {
-        orderBy: { level: "asc" },
-      },
-      impactScales: {
-        orderBy: { level: "asc" },
-      },
-      riskMatrices: {
-        orderBy: [{ likelihoodLevel: "asc" }, { impactLevel: "asc" }],
-      },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      riskAppetiteLevel: true,
+      riskAppetiteDescription: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
     },
   });
 

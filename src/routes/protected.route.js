@@ -6,6 +6,8 @@ import { profileRoutes } from "./profile.routes.js";
 import { konteksRoutes } from "./konteks.route.js";
 import { riskCategoryRoutes } from "./risk-category.route.js";
 import { likelihoodScaleRoutes } from "./likelihood-scale.route.js";
+import { impactScaleRoutes } from "./impact-scale.route.js";
+import { riskMatrixRoutes } from "./risk-matrix.route.js";
 import { sessionRoutes } from "./session.route.js";
 
 export const protectedRoute = Router();
@@ -18,6 +20,8 @@ const routes = [
   ...konteksRoutes,
   ...riskCategoryRoutes,
   ...likelihoodScaleRoutes,
+  ...impactScaleRoutes,
+  ...riskMatrixRoutes,
 ];
 
 routes.forEach(({ method, path, handler, roles }) => {

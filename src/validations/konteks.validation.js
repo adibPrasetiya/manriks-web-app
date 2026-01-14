@@ -43,86 +43,8 @@ const createKonteksSchema = Joi.object({
   riskAppetiteLevel: Joi.string().max(100).allow("", null).optional(),
   riskAppetiteDescription: Joi.string().allow("", null).optional(),
 
-  // Risk Categories (array of objects)
-  riskCategories: Joi.array()
-    .items(
-      Joi.object({
-        name: Joi.string().min(2).max(255).required().messages({
-          "any.required": "Nama kategori risiko wajib diisi",
-        }),
-        description: Joi.string().allow("", null).optional(),
-        order: Joi.number().integer().min(0).default(0),
-      })
-    )
-    .min(1)
-    .optional()
-    .messages({
-      "array.min": "Minimal harus ada 1 kategori risiko",
-    }),
-
-  // Likelihood Scale (array of objects)
-  likelihoodScales: Joi.array()
-    .items(
-      Joi.object({
-        level: Joi.number().integer().min(1).required().messages({
-          "any.required": "Level likelihood wajib diisi",
-        }),
-        label: Joi.string().min(2).max(100).required().messages({
-          "any.required": "Label likelihood wajib diisi",
-        }),
-        description: Joi.string().required().messages({
-          "any.required": "Deskripsi likelihood wajib diisi",
-        }),
-      })
-    )
-    .min(1)
-    .optional()
-    .messages({
-      "array.min": "Minimal harus ada 1 likelihood scale",
-    }),
-
-  // Impact Scale (array of objects)
-  impactScales: Joi.array()
-    .items(
-      Joi.object({
-        level: Joi.number().integer().min(1).required().messages({
-          "any.required": "Level impact wajib diisi",
-        }),
-        label: Joi.string().min(2).max(100).required().messages({
-          "any.required": "Label impact wajib diisi",
-        }),
-        description: Joi.string().required().messages({
-          "any.required": "Deskripsi impact wajib diisi",
-        }),
-      })
-    )
-    .min(1)
-    .optional()
-    .messages({
-      "array.min": "Minimal harus ada 1 impact scale",
-    }),
-
-  // Risk Matrix (array of objects with likelihood x impact combinations)
-  riskMatrices: Joi.array()
-    .items(
-      Joi.object({
-        likelihoodLevel: Joi.number().integer().min(1).required().messages({
-          "any.required": "Likelihood level wajib diisi",
-        }),
-        impactLevel: Joi.number().integer().min(1).required().messages({
-          "any.required": "Impact level wajib diisi",
-        }),
-        riskLevel: Joi.string()
-          .valid("LOW", "MEDIUM", "HIGH", "CRITICAL")
-          .required()
-          .messages({
-            "any.required": "Risk level wajib diisi",
-            "any.only":
-              "Risk level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
-          }),
-      })
-    )
-    .optional(),
+  // Is Active (optional, defaults to false)
+  isActive: Joi.boolean().default(false).optional(),
 });
 
 const updateKonteksSchema = Joi.object({

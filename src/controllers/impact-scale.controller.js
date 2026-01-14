@@ -1,10 +1,10 @@
-import likelihoodScaleService from "../services/likelihood-scale.service.js";
+import impactScaleService from "../services/impact-scale.service.js";
 
 const create = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
     const riskCategoryId = req.params.riskCategoryId;
-    const result = await likelihoodScaleService.create(
+    const result = await impactScaleService.create(
       konteksId,
       riskCategoryId,
       req.body
@@ -25,7 +25,7 @@ const search = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
     const riskCategoryId = req.params.riskCategoryId;
-    const result = await likelihoodScaleService.search(
+    const result = await impactScaleService.search(
       konteksId,
       riskCategoryId,
       req.query
@@ -48,7 +48,7 @@ const getById = async (req, res, next) => {
     const konteksId = req.params.konteksId;
     const riskCategoryId = req.params.riskCategoryId;
     const id = req.params.id;
-    const result = await likelihoodScaleService.getById(
+    const result = await impactScaleService.getById(
       konteksId,
       riskCategoryId,
       id
@@ -70,7 +70,7 @@ const update = async (req, res, next) => {
     const konteksId = req.params.konteksId;
     const riskCategoryId = req.params.riskCategoryId;
     const id = req.params.id;
-    const result = await likelihoodScaleService.update(
+    const result = await impactScaleService.update(
       konteksId,
       riskCategoryId,
       id,
@@ -93,7 +93,7 @@ const remove = async (req, res, next) => {
     const konteksId = req.params.konteksId;
     const riskCategoryId = req.params.riskCategoryId;
     const id = req.params.id;
-    const result = await likelihoodScaleService.remove(
+    const result = await impactScaleService.remove(
       konteksId,
       riskCategoryId,
       id
