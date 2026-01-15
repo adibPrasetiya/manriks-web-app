@@ -29,12 +29,41 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
       id: validatedRiskCategoryId,
       konteksId: validatedKonteksId,
     },
+    include: {
+      konteks: {
+        select: {
+          matrixSize: true,
+        },
+      },
+    },
   });
 
   if (!riskCategory) {
     throw new ResponseError(
       404,
       "Kategori risiko tidak ditemukan dalam konteks ini."
+    );
+  }
+
+  const matrixSize = riskCategory.konteks.matrixSize;
+
+  // Validate level is within matrixSize range
+  if (reqBody.level > matrixSize) {
+    throw new ResponseError(
+      400,
+      `Level tidak boleh melebihi ukuran matriks (${matrixSize}).`
+    );
+  }
+
+  // Check if total scales would exceed matrixSize
+  const currentScalesCount = await prismaClient.likelihoodScale.count({
+    where: { riskCategoryId: validatedRiskCategoryId },
+  });
+
+  if (currentScalesCount >= matrixSize) {
+    throw new ResponseError(
+      400,
+      `Jumlah likelihood scale sudah mencapai batas maksimal (${matrixSize}).`
     );
   }
 
@@ -271,12 +300,29 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
       id: validatedRiskCategoryId,
       konteksId: validatedKonteksId,
     },
+    include: {
+      konteks: {
+        select: {
+          matrixSize: true,
+        },
+      },
+    },
   });
 
   if (!riskCategory) {
     throw new ResponseError(
       404,
       "Kategori risiko tidak ditemukan dalam konteks ini."
+    );
+  }
+
+  const matrixSize = riskCategory.konteks.matrixSize;
+
+  // Validate level is within matrixSize range if being updated
+  if (reqBody.level && reqBody.level > matrixSize) {
+    throw new ResponseError(
+      400,
+      `Level tidak boleh melebihi ukuran matriks (${matrixSize}).`
     );
   }
 

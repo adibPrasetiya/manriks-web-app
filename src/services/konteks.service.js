@@ -58,6 +58,7 @@ const create = async (reqBody, userId) => {
       description: reqBody.description || null,
       periodStart: reqBody.periodStart,
       periodEnd: reqBody.periodEnd,
+      matrixSize: reqBody.matrixSize,
       riskAppetiteLevel: reqBody.riskAppetiteLevel || null,
       riskAppetiteDescription: reqBody.riskAppetiteDescription || null,
       isActive: reqBody.isActive || false,
@@ -71,6 +72,7 @@ const create = async (reqBody, userId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       isActive: true,
@@ -129,6 +131,7 @@ const search = async (queryParams) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       isActive: true,
@@ -136,6 +139,12 @@ const search = async (queryParams) => {
       updatedAt: true,
       createdBy: true,
       updatedBy: true,
+      _count: {
+        select: {
+          riskCategories: true,
+          riskMatrices: true,
+        },
+      },
     },
   });
 
@@ -167,6 +176,7 @@ const getById = async (konteksId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       isActive: true,
@@ -174,6 +184,12 @@ const getById = async (konteksId) => {
       updatedAt: true,
       createdBy: true,
       updatedBy: true,
+      _count: {
+        select: {
+          riskCategories: true,
+          riskMatrices: true,
+        },
+      },
     },
   });
 
@@ -197,6 +213,33 @@ const update = async (konteksId, reqBody, userId) => {
 
   if (!existingKonteks) {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
+  }
+
+  // Check if matrixSize is being updated and validate
+  if (reqBody.matrixSize && reqBody.matrixSize !== existingKonteks.matrixSize) {
+    // Check if there are any scales created
+    const scalesCount = await prismaClient.likelihoodScale.count({
+      where: {
+        riskCategory: {
+          konteksId: id,
+        },
+      },
+    });
+
+    const impactScalesCount = await prismaClient.impactScale.count({
+      where: {
+        riskCategory: {
+          konteksId: id,
+        },
+      },
+    });
+
+    if (scalesCount > 0 || impactScalesCount > 0) {
+      throw new ResponseError(
+        400,
+        "Ukuran matriks tidak dapat diubah karena sudah ada likelihood scale atau impact scale yang dibuat."
+      );
+    }
   }
 
   // Check period overlap if period is being updated
@@ -245,6 +288,7 @@ const update = async (konteksId, reqBody, userId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       isActive: true,
@@ -264,8 +308,18 @@ const update = async (konteksId, reqBody, userId) => {
 const setActive = async (konteksId, userId) => {
   const { konteksId: id } = validate(konteksIdSchema, { konteksId });
 
+  // Get konteks with all related data for validation
   const konteks = await prismaClient.konteks.findUnique({
     where: { id },
+    include: {
+      riskCategories: {
+        include: {
+          likelihoodScales: true,
+          impactScales: true,
+        },
+      },
+      riskMatrices: true,
+    },
   });
 
   if (!konteks) {
@@ -274,6 +328,39 @@ const setActive = async (konteksId, userId) => {
 
   if (konteks.isActive) {
     throw new ResponseError(400, "Konteks ini sudah aktif.");
+  }
+
+  // Validate: at least 1 risk category
+  if (konteks.riskCategories.length === 0) {
+    throw new ResponseError(
+      400,
+      "Konteks harus memiliki minimal 1 kategori risiko sebelum diaktifkan."
+    );
+  }
+
+  // Validate: each risk category must have complete scales
+  for (const category of konteks.riskCategories) {
+    if (category.likelihoodScales.length !== konteks.matrixSize) {
+      throw new ResponseError(
+        400,
+        `Kategori "${category.name}" harus memiliki ${konteks.matrixSize} likelihood scale (saat ini: ${category.likelihoodScales.length}).`
+      );
+    }
+    if (category.impactScales.length !== konteks.matrixSize) {
+      throw new ResponseError(
+        400,
+        `Kategori "${category.name}" harus memiliki ${konteks.matrixSize} impact scale (saat ini: ${category.impactScales.length}).`
+      );
+    }
+  }
+
+  // Validate: risk matrix must be complete
+  const expectedMatrixEntries = konteks.matrixSize * konteks.matrixSize;
+  if (konteks.riskMatrices.length !== expectedMatrixEntries) {
+    throw new ResponseError(
+      400,
+      `Risk matrix harus lengkap (${expectedMatrixEntries} entries untuk matriks ${konteks.matrixSize}x${konteks.matrixSize}, saat ini: ${konteks.riskMatrices.length}).`
+    );
   }
 
   // Use transaction: deactivate all, then activate the selected one
@@ -297,6 +384,7 @@ const setActive = async (konteksId, userId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
       isActive: true,
       createdAt: true,
       updatedAt: true,

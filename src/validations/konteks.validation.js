@@ -43,6 +43,15 @@ const createKonteksSchema = Joi.object({
   riskAppetiteLevel: Joi.string().max(100).allow("", null).optional(),
   riskAppetiteDescription: Joi.string().allow("", null).optional(),
 
+  // Matrix size (ukuran matriks risiko, e.g., 5 = 5x5)
+  matrixSize: Joi.number().integer().min(3).max(10).required().messages({
+    "number.base": "Ukuran matriks harus berupa angka",
+    "number.integer": "Ukuran matriks harus berupa bilangan bulat",
+    "number.min": "Ukuran matriks minimal 3",
+    "number.max": "Ukuran matriks maksimal 10",
+    "any.required": "Ukuran matriks wajib diisi",
+  }),
+
   // Is Active (optional, defaults to false)
   isActive: Joi.boolean().default(false).optional(),
 });
@@ -57,8 +66,13 @@ const updateKonteksSchema = Joi.object({
   riskAppetiteLevel: Joi.string().max(100).allow("", null),
   riskAppetiteDescription: Joi.string().allow("", null),
 
-  // Note: Updating related tables (categories, scales, matrices) will be done
-  // via separate endpoints or requires replace-all approach
+  // Matrix size (validasi apakah bisa diubah dilakukan di service layer)
+  matrixSize: Joi.number().integer().min(3).max(10).messages({
+    "number.base": "Ukuran matriks harus berupa angka",
+    "number.integer": "Ukuran matriks harus berupa bilangan bulat",
+    "number.min": "Ukuran matriks minimal 3",
+    "number.max": "Ukuran matriks maksimal 10",
+  }),
 })
   .min(1)
   .messages({

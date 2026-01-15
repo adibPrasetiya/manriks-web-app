@@ -117,6 +117,9 @@ model Konteks {
   periodStart  Int      // Tahun mulai, misal: 2024
   periodEnd    Int      // Tahun akhir, misal: 2025
 
+  // Matrix size (ukuran matriks risiko, e.g., 5 = 5x5)
+  matrixSize   Int      @default(5)
+
   // Risk Appetite (simple fields)
   riskAppetiteLevel       String?  @db.VarChar(100)  // e.g., "MODERATE", "HIGH"
   riskAppetiteDescription String?  @db.Text
@@ -156,8 +159,8 @@ model RiskCategory {
   likelihoodScales LikelihoodScale[]
   impactScales     ImpactScale[]
 
+  @@unique([konteksId, order])
   @@index([konteksId])
-  @@index([konteksId, order])
   @@map("risk_categories")
 }
 

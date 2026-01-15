@@ -42,6 +42,23 @@ const create = async (konteksId, reqBody) => {
     );
   }
 
+  // Check order uniqueness per konteks
+  if (reqBody.order !== undefined) {
+    const existingOrder = await prismaClient.riskCategory.findFirst({
+      where: {
+        konteksId: validatedKonteksId,
+        order: reqBody.order,
+      },
+    });
+
+    if (existingOrder) {
+      throw new ResponseError(
+        409,
+        `Order ${reqBody.order} sudah digunakan oleh kategori risiko "${existingOrder.name}" dalam konteks ini.`
+      );
+    }
+  }
+
   // Create risk category
   const riskCategory = await prismaClient.riskCategory.create({
     data: {
@@ -219,6 +236,24 @@ const update = async (konteksId, id, reqBody) => {
       throw new ResponseError(
         409,
         `Nama kategori risiko "${reqBody.name}" sudah digunakan dalam konteks ini.`
+      );
+    }
+  }
+
+  // If order is being updated, check uniqueness per konteks
+  if (reqBody.order !== undefined && reqBody.order !== existingCategory.order) {
+    const existingOrder = await prismaClient.riskCategory.findFirst({
+      where: {
+        konteksId: validatedKonteksId,
+        order: reqBody.order,
+        id: { not: validatedId },
+      },
+    });
+
+    if (existingOrder) {
+      throw new ResponseError(
+        409,
+        `Order ${reqBody.order} sudah digunakan oleh kategori risiko "${existingOrder.name}" dalam konteks ini.`
       );
     }
   }
