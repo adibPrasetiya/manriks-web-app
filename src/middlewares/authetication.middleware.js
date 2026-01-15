@@ -80,8 +80,14 @@ export const authenticationMiddleware = async (req, res, next) => {
         req.method === "POST" && req.path === "/users/me/profiles";
       const isLogoutEndpoint =
         req.method === "DELETE" && req.path === "/users/me/logout";
+      const isSearchUnitKerjaEndpoint =
+        req.method === "GET" && req.path.startsWith("/unit-kerja");
 
-      if (!isCreateProfileEndpoint && !isLogoutEndpoint) {
+      if (
+        !isCreateProfileEndpoint &&
+        !isLogoutEndpoint &&
+        !isSearchUnitKerjaEndpoint
+      ) {
         return res.status(403).json({
           errors:
             "Profile creation required. Please create your profile before accessing other resources.",
