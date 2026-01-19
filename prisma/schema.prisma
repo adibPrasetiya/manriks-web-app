@@ -81,6 +81,9 @@ model UnitKerja {
   updatedAt DateTime  @updatedAt
   profiles  Profile[]
 
+  // Relations for change requests
+  profileChangeRequests ProfileChangeRequest[]
+
   @@index([code])
   @@map("unit_kerja")
 }
@@ -93,11 +96,21 @@ model Profile {
   unitKerjaId String
   unitKerja   UnitKerja @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
   nomorHP     String?   @db.VarChar(20) // Optional
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+
+  // Verification fields
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
+  verifiedBy String? // userId admin yang memverifikasi
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  changeRequests ProfileChangeRequest[]
 
   @@index([userId])
   @@index([unitKerjaId])
+  @@index([isVerified])
   @@map("profiles")
 }
 
@@ -105,6 +118,47 @@ enum RoleName {
   USER
   ADMINISTRATOR
   KOMITE_PUSAT
+}
+
+enum ProfileRequestType {
+  INITIAL_VERIFICATION
+  CHANGE
+}
+
+enum ProfileRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ProfileChangeRequest {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  requestType ProfileRequestType @default(CHANGE)
+
+  // Data yang diminta untuk diubah
+  jabatan     String?    @db.VarChar(255)
+  unitKerjaId String?
+  unitKerja   UnitKerja? @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
+  nomorHP     String?    @db.VarChar(20)
+
+  status          ProfileRequestStatus @default(PENDING)
+  rejectionReason String?              @db.Text
+
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+  processedBy String? // userId admin yang memproses
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([status])
+  @@index([requestType])
+  @@index([requestedAt])
+  @@map("profile_change_requests")
 }
 
 model Konteks {

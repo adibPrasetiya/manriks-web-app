@@ -9,6 +9,12 @@ export const riskMatrixRoutes = [
     roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
+    method: "post",
+    path: "/konteks/:konteksId/risk-matrices/bulk",
+    handler: riskMatrixController.bulkCreate,
+    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
+  },
+  {
     method: "get",
     path: "/konteks/:konteksId/risk-matrices",
     handler: riskMatrixController.search,

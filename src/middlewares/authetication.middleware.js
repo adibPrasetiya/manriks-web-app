@@ -96,6 +96,38 @@ export const authenticationMiddleware = async (req, res, next) => {
       }
     }
 
+    // Check if profile is verified
+    if (user.profile && !user.profile.isVerified) {
+      const allowedEndpointsForUnverified = [
+        { method: "DELETE", path: "/users/me/logout" },
+        { method: "GET", pathStartsWith: "/users/me/profile-requests" },
+        { method: "POST", path: "/users/me/profile-requests" },
+        { method: "DELETE", pathStartsWith: "/users/me/profile-requests/" },
+        { method: "GET", pathStartsWith: "/unit-kerja" },
+      ];
+
+      const isAllowedForUnverified = allowedEndpointsForUnverified.some(
+        (endpoint) => {
+          if (endpoint.pathStartsWith) {
+            return (
+              req.method === endpoint.method &&
+              req.path.startsWith(endpoint.pathStartsWith)
+            );
+          }
+          return req.method === endpoint.method && req.path === endpoint.path;
+        }
+      );
+
+      if (!isAllowedForUnverified) {
+        return res.status(403).json({
+          errors:
+            "Profile belum diverifikasi. Silakan tunggu persetujuan administrator.",
+          mustVerifyProfile: true,
+          profileStatus: "PENDING_VERIFICATION",
+        });
+      }
+    }
+
     const roles = user.userRoles.map((ur) => ur.role.name);
 
     req.user = {
@@ -107,6 +139,8 @@ export const authenticationMiddleware = async (req, res, next) => {
       isVerified: user.isVerified,
       roles: roles,
       hasProfile: !!user.profile,
+      profileVerified: user.profile?.isVerified || false,
+      unitKerjaId: user.profile?.unitKerjaId || null,
     };
 
     next();

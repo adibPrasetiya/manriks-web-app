@@ -22,6 +22,9 @@ const createNewProfileSchema = Joi.object({
     }),
 });
 
+// Note: jabatan and unitKerjaId are included for validation purposes,
+// but will be rejected by the service layer with instructions to use
+// profile-request endpoint for changes to these fields
 const updateProfileSchema = Joi.object({
   jabatan: Joi.string().min(3).max(255).optional().messages({
     "string.empty": "Jabatan tidak boleh kosong",
@@ -31,7 +34,6 @@ const updateProfileSchema = Joi.object({
 
   unitKerjaId: Joi.string().optional().messages({
     "string.empty": "ID unit kerja tidak boleh kosong",
-    "any.required": "ID unit kerja wajib diisi",
   }),
 
   nomorHP: Joi.string()

@@ -3,6 +3,7 @@ import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
 import {
   createRiskMatrixSchema,
+  bulkCreateRiskMatrixSchema,
   updateRiskMatrixSchema,
   searchRiskMatrixSchema,
   riskMatrixIdSchema,
@@ -75,6 +76,125 @@ const create = async (konteksId, reqBody) => {
   return {
     message: "Matriks risiko berhasil dibuat",
     data: riskMatrix,
+  };
+};
+
+const bulkCreate = async (konteksId, reqBody) => {
+  // Validate konteksId
+  const { konteksId: validatedKonteksId } = validate(konteksIdSchema, {
+    konteksId,
+  });
+
+  // Validate request body
+  reqBody = validate(bulkCreateRiskMatrixSchema, reqBody);
+
+  // Check if konteks exists and get matrixSize
+  const konteks = await prismaClient.konteks.findUnique({
+    where: { id: validatedKonteksId },
+  });
+
+  if (!konteks) {
+    throw new ResponseError(404, "Konteks tidak ditemukan.");
+  }
+
+  const matrixSize = konteks.matrixSize;
+
+  // Validate all entries
+  const errors = [];
+  const seen = new Set();
+
+  for (let i = 0; i < reqBody.matrices.length; i++) {
+    const matrix = reqBody.matrices[i];
+    const key = `${matrix.likelihoodLevel}-${matrix.impactLevel}`;
+
+    // Check for duplicates within request body
+    if (seen.has(key)) {
+      errors.push(
+        `Index ${i}: Duplikat kombinasi likelihood level ${matrix.likelihoodLevel} dan impact level ${matrix.impactLevel}`
+      );
+    }
+    seen.add(key);
+
+    // Check level ranges based on matrixSize from konteks
+    if (matrix.likelihoodLevel > matrixSize) {
+      errors.push(
+        `Index ${i}: Likelihood level ${matrix.likelihoodLevel} melebihi ukuran matriks (maksimal ${matrixSize})`
+      );
+    }
+    if (matrix.impactLevel > matrixSize) {
+      errors.push(
+        `Index ${i}: Impact level ${matrix.impactLevel} melebihi ukuran matriks (maksimal ${matrixSize})`
+      );
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new ResponseError(400, errors.join("; "));
+  }
+
+  // Check for existing matrices in database
+  const existingMatrices = await prismaClient.riskMatrix.findMany({
+    where: { konteksId: validatedKonteksId },
+    select: { likelihoodLevel: true, impactLevel: true },
+  });
+
+  const existingKeys = new Set(
+    existingMatrices.map((m) => `${m.likelihoodLevel}-${m.impactLevel}`)
+  );
+
+  // Check for duplicates against existing data
+  const duplicatesInDb = [];
+  for (const matrix of reqBody.matrices) {
+    const key = `${matrix.likelihoodLevel}-${matrix.impactLevel}`;
+    if (existingKeys.has(key)) {
+      duplicatesInDb.push(
+        `Likelihood ${matrix.likelihoodLevel} x Impact ${matrix.impactLevel}`
+      );
+    }
+  }
+
+  if (duplicatesInDb.length > 0) {
+    throw new ResponseError(
+      409,
+      `Matriks berikut sudah ada di database: ${duplicatesInDb.join(", ")}`
+    );
+  }
+
+  // Bulk create using transaction
+  const createdMatrices = await prismaClient.$transaction(
+    reqBody.matrices.map((matrix) =>
+      prismaClient.riskMatrix.create({
+        data: {
+          konteksId: validatedKonteksId,
+          likelihoodLevel: matrix.likelihoodLevel,
+          impactLevel: matrix.impactLevel,
+          riskLevel: matrix.riskLevel,
+        },
+        select: {
+          id: true,
+          konteksId: true,
+          likelihoodLevel: true,
+          impactLevel: true,
+          riskLevel: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+    )
+  );
+
+  const expectedTotal = matrixSize * matrixSize;
+  const currentTotal = existingMatrices.length + createdMatrices.length;
+
+  return {
+    message: `${createdMatrices.length} matriks risiko berhasil dibuat`,
+    data: {
+      created: createdMatrices,
+      createdCount: createdMatrices.length,
+      totalInKonteks: currentTotal,
+      expectedTotal: expectedTotal,
+      isComplete: currentTotal === expectedTotal,
+    },
   };
 };
 
@@ -295,6 +415,7 @@ const remove = async (konteksId, id) => {
 
 export default {
   create,
+  bulkCreate,
   search,
   getById,
   update,

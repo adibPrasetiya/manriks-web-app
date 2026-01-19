@@ -37,33 +37,75 @@ const create = async (reqBody, userId) => {
     );
   }
 
-  const profile = await prismaClient.profile.create({
-    data: {
-      userId: userId.userId,
-      jabatan: reqBody.jabatan,
-      unitKerjaId: reqBody.unitKerjaId,
-      nomorHP:
-        reqBody.nomorHP && reqBody.nomorHP.trim() !== ""
-          ? reqBody.nomorHP
-          : undefined,
-    },
-    select: {
-      userId: true,
-      jabatan: true,
-      unitKerja: true,
-      nomorHP: true,
-    },
-  });
+  // Use transaction to create profile and initial verification request
+  const [profile, changeRequest] = await prismaClient.$transaction(
+    async (tx) => {
+      // Create profile with isVerified: false
+      const newProfile = await tx.profile.create({
+        data: {
+          userId: userId.userId,
+          jabatan: reqBody.jabatan,
+          unitKerjaId: reqBody.unitKerjaId,
+          nomorHP:
+            reqBody.nomorHP && reqBody.nomorHP.trim() !== ""
+              ? reqBody.nomorHP
+              : undefined,
+          isVerified: false,
+        },
+        select: {
+          id: true,
+          userId: true,
+          jabatan: true,
+          unitKerja: true,
+          nomorHP: true,
+          isVerified: true,
+        },
+      });
+
+      // Create initial verification request
+      const verificationRequest = await tx.profileChangeRequest.create({
+        data: {
+          profileId: newProfile.id,
+          requestType: "INITIAL_VERIFICATION",
+          jabatan: reqBody.jabatan,
+          unitKerjaId: reqBody.unitKerjaId,
+          nomorHP:
+            reqBody.nomorHP && reqBody.nomorHP.trim() !== ""
+              ? reqBody.nomorHP
+              : null,
+          status: "PENDING",
+        },
+      });
+
+      return [newProfile, verificationRequest];
+    }
+  );
 
   return {
-    message: "Profile berhasil dibuat",
-    data: profile,
+    message:
+      "Profile berhasil dibuat. Silakan tunggu verifikasi dari administrator.",
+    data: {
+      profile,
+      verificationRequest: {
+        id: changeRequest.id,
+        status: changeRequest.status,
+        requestType: changeRequest.requestType,
+      },
+    },
   };
 };
 
 const update = async (reqBody, userId) => {
   reqBody = validate(updateProfileSchema, reqBody);
   userId = validate(userIdSchema, { userId: userId });
+
+  // Check if user is trying to update restricted fields
+  if (reqBody.jabatan || reqBody.unitKerjaId) {
+    throw new ResponseError(
+      400,
+      "Untuk mengubah jabatan atau unit kerja, silakan buat permintaan perubahan melalui endpoint POST /users/me/profile-requests"
+    );
+  }
 
   const existingProfile = await prismaClient.profile.findUnique({
     where: {
@@ -74,37 +116,36 @@ const update = async (reqBody, userId) => {
   if (!existingProfile) {
     throw new ResponseError(
       404,
-      `Profile dengan User ID ${userId} tidak ditemukan`
+      `Profile dengan User ID ${userId.userId} tidak ditemukan`
     );
   }
 
-  const existingUnitKerja = await prismaClient.unitKerja.findUnique({
-    where: {
-      id: reqBody.unitKerjaId,
-    },
-  });
+  // Only allow nomorHP update
+  const updateData = {};
+  if (reqBody.nomorHP !== undefined) {
+    updateData.nomorHP =
+      reqBody.nomorHP && reqBody.nomorHP.trim() !== "" ? reqBody.nomorHP : null;
+  }
 
-  if (!existingUnitKerja) {
-    throw new ResponseError(
-      404,
-      `Unit Kerja dengan ID ${reqBody.unitKerjaId} tidak ditemukan`
-    );
+  if (Object.keys(updateData).length === 0) {
+    throw new ResponseError(400, "Tidak ada data yang perlu diperbarui.");
   }
 
   const updateProfile = await prismaClient.profile.update({
     where: {
       userId: userId.userId,
     },
-    data: reqBody,
+    data: updateData,
     select: {
       jabatan: true,
       unitKerja: true,
       nomorHP: true,
+      isVerified: true,
     },
   });
 
   return {
-    message: "Profile berhasil di perbarui",
+    message: "Profile berhasil diperbarui",
     data: updateProfile,
   };
 };

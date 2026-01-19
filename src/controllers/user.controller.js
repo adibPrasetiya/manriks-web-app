@@ -28,7 +28,7 @@ const login = async (req, res, next) => {
       .cookie("refreshToken", result.data.refreshToken, {
         httpOnly: true, // Mencegah akses via JavaScript (XSS protection)
         secure: NODE_ENV === "production", // Hanya HTTPS di production
-        sameSite: "strict", // CSRF protection
+        sameSite: NODE_ENV === "production" ? "strict" : "lax", // strict di production, lax di development untuk cross-origin
         maxAge: REFRESH_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000, // 1 jam
       })
       .status(200)

@@ -16,6 +16,22 @@ const create = async (req, res, next) => {
   }
 };
 
+const bulkCreate = async (req, res, next) => {
+  try {
+    const konteksId = req.params.konteksId;
+    const result = await riskMatrixService.bulkCreate(konteksId, req.body);
+    res
+      .status(201)
+      .json({
+        message: result.message,
+        data: result.data,
+      })
+      .end();
+  } catch (error) {
+    next(error);
+  }
+};
+
 const search = async (req, res, next) => {
   try {
     const konteksId = req.params.konteksId;
@@ -85,6 +101,7 @@ const remove = async (req, res, next) => {
 
 export default {
   create,
+  bulkCreate,
   search,
   getById,
   update,

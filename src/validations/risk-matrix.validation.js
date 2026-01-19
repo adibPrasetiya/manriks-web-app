@@ -1,6 +1,6 @@
 import Joi from "joi";
 
-const createRiskMatrixSchema = Joi.object({
+const riskMatrixItemSchema = Joi.object({
   likelihoodLevel: Joi.number().integer().min(1).required().messages({
     "number.base": "Likelihood level harus berupa angka",
     "number.integer": "Likelihood level harus berupa bilangan bulat",
@@ -23,6 +23,17 @@ const createRiskMatrixSchema = Joi.object({
       "any.only": "Risk level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
       "any.required": "Risk level wajib diisi",
     }),
+});
+
+const createRiskMatrixSchema = riskMatrixItemSchema;
+
+const bulkCreateRiskMatrixSchema = Joi.object({
+  matrices: Joi.array().items(riskMatrixItemSchema).min(1).max(100).required().messages({
+    "array.base": "Matrices harus berupa array",
+    "array.min": "Minimal harus ada 1 matriks",
+    "array.max": "Maksimal 100 matriks dalam satu request",
+    "any.required": "Matrices wajib diisi",
+  }),
 });
 
 const updateRiskMatrixSchema = Joi.object({
@@ -81,6 +92,7 @@ const konteksIdSchema = Joi.object({
 
 export {
   createRiskMatrixSchema,
+  bulkCreateRiskMatrixSchema,
   updateRiskMatrixSchema,
   searchRiskMatrixSchema,
   riskMatrixIdSchema,
