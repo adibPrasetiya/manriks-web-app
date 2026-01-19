@@ -36,6 +36,9 @@ async function main() {
   });
   console.log("✅ Roles berhasil di-seed\n");
 
+  // Store admin user id for verification references
+  let adminUserId = null;
+
   // 2. Seed Unit Kerja
   console.log("🏢 Seeding Unit Kerja...");
   const unitKerjaData = [
@@ -81,6 +84,7 @@ async function main() {
   // 3. Seed Users dengan Profiles
   console.log("👤 Seeding Users & Profiles...");
   const hashedPassword = await bcrypt.hash("password123", 10);
+  const verifiedAt = new Date();
 
   const usersData = [
     {
@@ -95,6 +99,9 @@ async function main() {
         jabatan: "System Administrator",
         unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
         nomorHP: "081234567890",
+        isVerified: true,
+        verifiedAt: verifiedAt,
+        // verifiedBy akan di-update setelah admin user dibuat
       },
     },
     {
@@ -109,6 +116,8 @@ async function main() {
         jabatan: "Ketua Komite Pusat",
         unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
         nomorHP: "081234567899",
+        isVerified: true,
+        verifiedAt: verifiedAt,
       },
     },
     {
@@ -123,6 +132,8 @@ async function main() {
         jabatan: "IT Manager",
         unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
         nomorHP: "081234567891",
+        isVerified: true,
+        verifiedAt: verifiedAt,
       },
     },
     {
@@ -137,6 +148,8 @@ async function main() {
         jabatan: "Finance Manager",
         unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
         nomorHP: "081234567892",
+        isVerified: true,
+        verifiedAt: verifiedAt,
       },
     },
     {
@@ -151,6 +164,8 @@ async function main() {
         jabatan: "HR Manager",
         unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
         nomorHP: "081234567893",
+        isVerified: true,
+        verifiedAt: verifiedAt,
       },
     },
     {
@@ -165,6 +180,8 @@ async function main() {
         jabatan: "Operations Supervisor",
         unitKerjaId: unitKerjaRecords[3].id, // Operasional
         nomorHP: null, // Optional - tidak diisi
+        isVerified: true,
+        verifiedAt: verifiedAt,
       },
     },
     {
@@ -179,9 +196,75 @@ async function main() {
         jabatan: "Marketing Executive",
         unitKerjaId: unitKerjaRecords[4].id, // Pemasaran & Komunikasi
         nomorHP: null,
+        isVerified: false, // Profile belum diverifikasi
+      },
+    },
+    // Users dengan profile belum terverifikasi (untuk testing verification feature)
+    {
+      username: "diana.miller",
+      name: "Diana Miller",
+      email: "diana.miller@company.com",
+      password: hashedPassword,
+      isActive: true,
+      isVerified: false,
+      roleId: roleUser.id,
+      profile: {
+        jabatan: "Junior Developer",
+        unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+        nomorHP: "081234567894",
+        isVerified: false, // Profile belum diverifikasi - akan buat PENDING request
+      },
+    },
+    {
+      username: "evan.thomas",
+      name: "Evan Thomas",
+      email: "evan.thomas@company.com",
+      password: hashedPassword,
+      isActive: true,
+      isVerified: false,
+      roleId: roleUser.id,
+      profile: {
+        jabatan: "Accountant",
+        unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
+        nomorHP: "081234567895",
+        isVerified: false, // Profile belum diverifikasi - akan buat PENDING request
+      },
+    },
+    {
+      username: "fiona.garcia",
+      name: "Fiona Garcia",
+      email: "fiona.garcia@company.com",
+      password: hashedPassword,
+      isActive: true,
+      isVerified: false,
+      roleId: roleUser.id,
+      profile: {
+        jabatan: "HR Staff",
+        unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
+        nomorHP: "081234567896",
+        isVerified: false, // Profile belum diverifikasi - akan buat REJECTED request
+      },
+    },
+    {
+      username: "george.lee",
+      name: "George Lee",
+      email: "george.lee@company.com",
+      password: hashedPassword,
+      isActive: true,
+      isVerified: true,
+      roleId: roleUser.id,
+      profile: {
+        jabatan: "Senior Operator",
+        unitKerjaId: unitKerjaRecords[3].id, // Operasional
+        nomorHP: "081234567897",
+        isVerified: true,
+        verifiedAt: verifiedAt,
+        // User yang sudah verified tapi request perubahan data (CHANGE request)
       },
     },
   ];
+
+  const createdUsers = {};
 
   for (const userData of usersData) {
     const { roleId, profile, ...userCreateData } = userData;
@@ -189,10 +272,12 @@ async function main() {
     // Cek apakah user sudah ada
     const existingUser = await prisma.user.findUnique({
       where: { email: userCreateData.email },
+      include: { profile: true },
     });
 
     if (existingUser) {
       console.log(`   ⚠ User ${userCreateData.email} sudah ada, skip...`);
+      createdUsers[userCreateData.username] = existingUser;
       continue;
     }
 
@@ -219,12 +304,143 @@ async function main() {
       },
     });
 
+    // Simpan user untuk referensi
+    createdUsers[user.username] = user;
+
+    // Simpan adminUserId untuk referensi verifiedBy
+    if (user.username === "admin") {
+      adminUserId = user.id;
+    }
+
     console.log(
       `   ✓ ${user.name} (${user.email}) - ${user.userRoles[0].role.name} - ${user.profile.jabatan}`
     );
   }
 
+  // Update verifiedBy untuk profiles yang sudah terverifikasi
+  if (adminUserId) {
+    await prisma.profile.updateMany({
+      where: {
+        isVerified: true,
+        verifiedBy: null,
+      },
+      data: {
+        verifiedBy: adminUserId,
+      },
+    });
+  }
+
   console.log("✅ Users & Profiles berhasil di-seed\n");
+
+  // 4. Seed Profile Change Requests
+  console.log("📋 Seeding Profile Change Requests...");
+
+  // Hapus existing requests untuk fresh seed
+  await prisma.profileChangeRequest.deleteMany({});
+
+  // Buat sample ProfileChangeRequest untuk testing
+  const profileChangeRequestsData = [];
+
+  // PENDING - Initial Verification Request (diana.miller)
+  if (createdUsers["diana.miller"]?.profile) {
+    profileChangeRequestsData.push({
+      profileId: createdUsers["diana.miller"].profile.id,
+      requestType: "INITIAL_VERIFICATION",
+      jabatan: "Senior Developer", // Request jabatan baru
+      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+      nomorHP: "081234567894",
+      status: "PENDING",
+      requestedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 hari lalu
+    });
+  }
+
+  // PENDING - Initial Verification Request (evan.thomas)
+  if (createdUsers["evan.thomas"]?.profile) {
+    profileChangeRequestsData.push({
+      profileId: createdUsers["evan.thomas"].profile.id,
+      requestType: "INITIAL_VERIFICATION",
+      jabatan: "Senior Accountant", // Request jabatan baru
+      unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
+      nomorHP: "081234567895",
+      status: "PENDING",
+      requestedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 hari lalu
+    });
+  }
+
+  // REJECTED - Initial Verification Request (fiona.garcia)
+  if (createdUsers["fiona.garcia"]?.profile) {
+    profileChangeRequestsData.push({
+      profileId: createdUsers["fiona.garcia"].profile.id,
+      requestType: "INITIAL_VERIFICATION",
+      jabatan: "HR Manager", // Request jabatan yang tidak sesuai
+      unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
+      nomorHP: "081234567896",
+      status: "REJECTED",
+      rejectionReason: "Jabatan yang diajukan tidak sesuai dengan posisi entry level. Silakan ajukan jabatan yang sesuai dengan pengalaman kerja.",
+      requestedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 hari lalu
+      processedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 hari lalu
+      processedBy: adminUserId,
+    });
+  }
+
+  // PENDING - Change Request (george.lee - user yang sudah verified ingin ubah data)
+  if (createdUsers["george.lee"]?.profile) {
+    profileChangeRequestsData.push({
+      profileId: createdUsers["george.lee"].profile.id,
+      requestType: "CHANGE",
+      jabatan: "Operations Manager", // Request promosi
+      unitKerjaId: unitKerjaRecords[3].id, // Operasional (tetap sama)
+      nomorHP: "081234567897",
+      status: "PENDING",
+      requestedAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 jam lalu
+    });
+  }
+
+  // APPROVED - Change Request historical (john.doe)
+  if (createdUsers["john.doe"]?.profile) {
+    profileChangeRequestsData.push({
+      profileId: createdUsers["john.doe"].profile.id,
+      requestType: "CHANGE",
+      jabatan: "IT Manager", // Dari Staff menjadi Manager (sudah diapprove)
+      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+      nomorHP: "081234567891",
+      status: "APPROVED",
+      requestedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 hari lalu
+      processedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000), // 28 hari lalu
+      processedBy: adminUserId,
+    });
+  }
+
+  // PENDING - Initial Verification Request (charlie.davis)
+  if (createdUsers["charlie.davis"]?.profile) {
+    profileChangeRequestsData.push({
+      profileId: createdUsers["charlie.davis"].profile.id,
+      requestType: "INITIAL_VERIFICATION",
+      jabatan: "Marketing Manager", // Request jabatan baru
+      unitKerjaId: unitKerjaRecords[4].id, // Pemasaran & Komunikasi
+      nomorHP: "081234567800",
+      status: "PENDING",
+      requestedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 hari lalu
+    });
+  }
+
+  for (const requestData of profileChangeRequestsData) {
+    const request = await prisma.profileChangeRequest.create({
+      data: requestData,
+      include: {
+        profile: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+    console.log(
+      `   ✓ ${request.requestType} request for ${request.profile.user.name} - Status: ${request.status}`
+    );
+  }
+
+  console.log("✅ Profile Change Requests berhasil di-seed\n");
 
   // Summary
   console.log("📊 Summary:");
@@ -232,21 +448,37 @@ async function main() {
   const totalUnitKerja = await prisma.unitKerja.count();
   const totalUsers = await prisma.user.count();
   const totalProfiles = await prisma.profile.count();
+  const totalVerifiedProfiles = await prisma.profile.count({ where: { isVerified: true } });
+  const totalUnverifiedProfiles = await prisma.profile.count({ where: { isVerified: false } });
+  const totalProfileRequests = await prisma.profileChangeRequest.count();
+  const totalPendingRequests = await prisma.profileChangeRequest.count({ where: { status: "PENDING" } });
+  const totalApprovedRequests = await prisma.profileChangeRequest.count({ where: { status: "APPROVED" } });
+  const totalRejectedRequests = await prisma.profileChangeRequest.count({ where: { status: "REJECTED" } });
 
   console.log(`   • Total Roles: ${totalRoles}`);
   console.log(`   • Total Unit Kerja: ${totalUnitKerja}`);
   console.log(`   • Total Users: ${totalUsers}`);
   console.log(`   • Total Profiles: ${totalProfiles}`);
+  console.log(`     - Verified: ${totalVerifiedProfiles}`);
+  console.log(`     - Unverified: ${totalUnverifiedProfiles}`);
+  console.log(`   • Total Profile Requests: ${totalProfileRequests}`);
+  console.log(`     - Pending: ${totalPendingRequests}`);
+  console.log(`     - Approved: ${totalApprovedRequests}`);
+  console.log(`     - Rejected: ${totalRejectedRequests}`);
 
   console.log("\n✅ Seeding selesai!");
   console.log("\n📝 Credentials untuk testing:");
   console.log("   • Username: admin | Password: password123 (ADMINISTRATOR)");
   console.log("   • Username: komite.pusat | Password: password123 (KOMITE_PUSAT)");
-  console.log("   • Username: john.doe | Password: password123 (USER)");
-  console.log("   • Username: jane.smith | Password: password123 (USER)");
-  console.log("   • Username: bob.wilson | Password: password123 (USER)");
-  console.log("   • Username: alice.brown | Password: password123 (USER)");
-  console.log("   • Username: charlie.davis | Password: password123 (USER)");
+  console.log("   • Username: john.doe | Password: password123 (USER - Verified)");
+  console.log("   • Username: jane.smith | Password: password123 (USER - Verified)");
+  console.log("   • Username: bob.wilson | Password: password123 (USER - Verified)");
+  console.log("   • Username: alice.brown | Password: password123 (USER - Verified)");
+  console.log("   • Username: charlie.davis | Password: password123 (USER - Unverified, has PENDING request)");
+  console.log("   • Username: diana.miller | Password: password123 (USER - Unverified, has PENDING request)");
+  console.log("   • Username: evan.thomas | Password: password123 (USER - Unverified, has PENDING request)");
+  console.log("   • Username: fiona.garcia | Password: password123 (USER - Unverified, has REJECTED request)");
+  console.log("   • Username: george.lee | Password: password123 (USER - Verified, has PENDING change request)");
 }
 
 main()
