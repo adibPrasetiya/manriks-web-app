@@ -39,9 +39,19 @@ const createKonteksSchema = Joi.object({
       "any.required": "Periode akhir wajib diisi",
     }),
 
-  // Risk Appetite (simple)
-  riskAppetiteLevel: Joi.string().max(100).allow("", null).optional(),
-  riskAppetiteDescription: Joi.string().allow("", null).optional(),
+  // Risk Appetite (required)
+  riskAppetiteLevel: Joi.string()
+    .valid("LOW", "MEDIUM", "HIGH", "CRITICAL")
+    .required()
+    .messages({
+      "any.only":
+        "Risk appetite level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
+      "any.required": "Risk appetite level wajib diisi",
+    }),
+  riskAppetiteDescription: Joi.string().min(1).max(500).required().messages({
+    "string.empty": "Deskripsi risk appetite tidak boleh kosong",
+    "any.required": "Deskripsi risk appetite wajib diisi",
+  }),
 
   // Matrix size (ukuran matriks risiko, e.g., 5 = 5x5)
   matrixSize: Joi.number().integer().min(3).max(10).required().messages({
@@ -51,9 +61,6 @@ const createKonteksSchema = Joi.object({
     "number.max": "Ukuran matriks maksimal 10",
     "any.required": "Ukuran matriks wajib diisi",
   }),
-
-  // Is Active (optional, defaults to false)
-  isActive: Joi.boolean().default(false).optional(),
 });
 
 const updateKonteksSchema = Joi.object({
@@ -63,8 +70,15 @@ const updateKonteksSchema = Joi.object({
   periodStart: Joi.number().integer().min(2000).max(2100),
   periodEnd: Joi.number().integer().min(2000).max(2100),
 
-  riskAppetiteLevel: Joi.string().max(100).allow("", null),
-  riskAppetiteDescription: Joi.string().allow("", null),
+  riskAppetiteLevel: Joi.string()
+    .valid("LOW", "MEDIUM", "HIGH", "CRITICAL")
+    .messages({
+      "any.only":
+        "Risk appetite level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
+    }),
+  riskAppetiteDescription: Joi.string().min(1).messages({
+    "string.empty": "Deskripsi risk appetite tidak boleh kosong",
+  }),
 
   // Matrix size (validasi apakah bisa diubah dilakukan di service layer)
   matrixSize: Joi.number().integer().min(3).max(10).messages({
