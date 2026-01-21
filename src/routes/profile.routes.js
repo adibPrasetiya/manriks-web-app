@@ -11,4 +11,9 @@ export const profileRoutes = [
     path: "/users/me/profiles",
     handler: profileController.update,
   },
+  {
+    method: "get",
+    path: "/users/me/profiles",
+    handler: profileController.get,
+  },
 ];

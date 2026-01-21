@@ -20,7 +20,7 @@ const create = async (reqBody, userId) => {
   if (existingProfile) {
     throw new ResponseError(
       409,
-      "Gagal membuat profile baru. Profile anda sudah dibuat."
+      "Gagal membuat profile baru. Profile anda sudah dibuat.",
     );
   }
 
@@ -33,7 +33,7 @@ const create = async (reqBody, userId) => {
   if (!existingUnitKerja) {
     throw new ResponseError(
       404,
-      `Unit Kerja dengan ID ${reqBody.unitKerjaId} tidak ditemukan`
+      `Unit Kerja dengan ID ${reqBody.unitKerjaId} tidak ditemukan`,
     );
   }
 
@@ -78,7 +78,7 @@ const create = async (reqBody, userId) => {
       });
 
       return [newProfile, verificationRequest];
-    }
+    },
   );
 
   return {
@@ -103,7 +103,7 @@ const update = async (reqBody, userId) => {
   if (reqBody.jabatan || reqBody.unitKerjaId) {
     throw new ResponseError(
       400,
-      "Untuk mengubah jabatan atau unit kerja, silakan buat permintaan perubahan melalui endpoint POST /users/me/profile-requests"
+      "Untuk mengubah jabatan atau unit kerja, silakan buat permintaan perubahan melalui endpoint POST /users/me/profile-requests",
     );
   }
 
@@ -116,7 +116,7 @@ const update = async (reqBody, userId) => {
   if (!existingProfile) {
     throw new ResponseError(
       404,
-      `Profile dengan User ID ${userId.userId} tidak ditemukan`
+      `Profile dengan User ID ${userId.userId} tidak ditemukan`,
     );
   }
 
@@ -150,4 +150,45 @@ const update = async (reqBody, userId) => {
   };
 };
 
-export default { create, update };
+const get = async (user) => {
+  let userId = user.userId;
+  userId = validate(userIdSchema, { userId: userId });
+  const existingProfile = await prismaClient.profile.findUnique({
+    where: {
+      userId: userId.userId,
+    },
+    select: {
+      nomorHP: true,
+      jabatan: true,
+      unitKerja: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!existingProfile) {
+    throw new ResponseError(404, "Profile tidak ditemukan");
+  }
+
+  const profile = {
+    username: user.username,
+    name: user.user.name,
+    email: user.user.email,
+    roles: user.roles,
+    jabatan: existingProfile.jabatan,
+    unitKerja: {
+      name: existingProfile.unitKerja.name,
+      email: existingProfile.unitKerja.email,
+    },
+  };
+
+  return {
+    message: "Profile ditemukan",
+    data: profile,
+  };
+};
+
+export default { create, update, get };

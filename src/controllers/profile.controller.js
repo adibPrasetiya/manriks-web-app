@@ -30,4 +30,19 @@ const update = async (req, res, next) => {
   }
 };
 
-export default { create, update };
+const get = async (req, res, next) => {
+  try {
+    const result = await profileService.get(req.user);
+    res
+      .status(200)
+      .json({
+        message: result.message,
+        data: result.data,
+      })
+      .end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { create, update, get };
