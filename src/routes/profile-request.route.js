@@ -18,11 +18,6 @@ export const profileRequestRoutes = [
     path: "/users/me/profile-requests",
     handler: profileRequestController.create,
   },
-  {
-    method: "delete",
-    path: "/users/me/profile-requests/:requestId",
-    handler: profileRequestController.cancelMyRequest,
-  },
 
   // Admin endpoints (ADMINISTRATOR only)
   {
