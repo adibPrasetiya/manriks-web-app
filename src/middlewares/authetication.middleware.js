@@ -78,6 +78,8 @@ export const authenticationMiddleware = async (req, res, next) => {
     console.log("path:", req.path);
     console.log("originalUrl:", req.originalUrl);
 
+    console.log(user);
+
     // Check if user has profile
     if (!user.profile) {
       const isCreateProfileEndpoint =
