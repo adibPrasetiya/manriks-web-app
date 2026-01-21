@@ -24,7 +24,7 @@ const create = async (userId, reqBody) => {
   if (!profile) {
     throw new ResponseError(
       404,
-      "Profile tidak ditemukan. Silakan buat profile terlebih dahulu."
+      "Profile tidak ditemukan. Silakan buat profile terlebih dahulu.",
     );
   }
 
@@ -40,7 +40,7 @@ const create = async (userId, reqBody) => {
   if (existingPendingRequest) {
     throw new ResponseError(
       409,
-      "Anda sudah memiliki permintaan perubahan yang sedang menunggu persetujuan. Batalkan permintaan tersebut atau tunggu sampai diproses."
+      "Anda sudah memiliki permintaan perubahan yang sedang menunggu persetujuan. Batalkan permintaan tersebut atau tunggu sampai diproses.",
     );
   }
 
@@ -53,7 +53,7 @@ const create = async (userId, reqBody) => {
     if (!unitKerja) {
       throw new ResponseError(
         404,
-        `Unit Kerja dengan ID ${reqBody.unitKerjaId} tidak ditemukan.`
+        `Unit Kerja dengan ID ${reqBody.unitKerjaId} tidak ditemukan.`,
       );
     }
   }
@@ -70,6 +70,7 @@ const create = async (userId, reqBody) => {
       unitKerjaId: reqBody.unitKerjaId || null,
       nomorHP: reqBody.nomorHP !== undefined ? reqBody.nomorHP : null,
       status: "PENDING",
+      isVerified: false,
     },
     include: {
       profile: {
@@ -191,7 +192,7 @@ const getMyRequestById = async (userId, requestId) => {
   if (request.profileId !== profile.id) {
     throw new ResponseError(
       403,
-      "Anda tidak memiliki akses ke permintaan ini."
+      "Anda tidak memiliki akses ke permintaan ini.",
     );
   }
 
@@ -229,7 +230,7 @@ const cancelMyRequest = async (userId, requestId) => {
   if (request.profileId !== profile.id) {
     throw new ResponseError(
       403,
-      "Anda tidak memiliki akses ke permintaan ini."
+      "Anda tidak memiliki akses ke permintaan ini.",
     );
   }
 
@@ -237,7 +238,7 @@ const cancelMyRequest = async (userId, requestId) => {
   if (request.status !== "PENDING") {
     throw new ResponseError(
       400,
-      "Hanya permintaan dengan status PENDING yang dapat dibatalkan."
+      "Hanya permintaan dengan status PENDING yang dapat dibatalkan.",
     );
   }
 
@@ -411,7 +412,7 @@ const approve = async (requestId, adminUserId) => {
   if (request.status !== "PENDING") {
     throw new ResponseError(
       400,
-      `Permintaan ini sudah diproses dengan status ${request.status}.`
+      `Permintaan ini sudah diproses dengan status ${request.status}.`,
     );
   }
 
@@ -495,7 +496,7 @@ const reject = async (requestId, adminUserId, reqBody) => {
   if (request.status !== "PENDING") {
     throw new ResponseError(
       400,
-      `Permintaan ini sudah diproses dengan status ${request.status}.`
+      `Permintaan ini sudah diproses dengan status ${request.status}.`,
     );
   }
 
