@@ -50,7 +50,7 @@ export const authenticationMiddleware = async (req, res, next) => {
 
     if (user.passwordChangedAt) {
       const passwordChangedTimestamp = Math.floor(
-        user.passwordChangedAt.getTime() / 1000
+        user.passwordChangedAt.getTime() / 1000,
       );
 
       if (decoded.iat < passwordChangedTimestamp) {
@@ -115,7 +115,7 @@ export const authenticationMiddleware = async (req, res, next) => {
             );
           }
           return req.method === endpoint.method && req.path === endpoint.path;
-        }
+        },
       );
 
       if (!isAllowedForUnverified) {
