@@ -160,6 +160,7 @@ const get = async (user) => {
     select: {
       nomorHP: true,
       jabatan: true,
+      isVerified: true,
       unitKerja: {
         select: {
           name: true,
@@ -183,6 +184,8 @@ const get = async (user) => {
       name: existingProfile.unitKerja.name,
       email: existingProfile.unitKerja.email,
     },
+    nomorHP: existingProfile.nomorHP,
+    isVerified: true,
   };
 
   return {
