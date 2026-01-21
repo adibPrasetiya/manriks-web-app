@@ -88,11 +88,15 @@ export const authenticationMiddleware = async (req, res, next) => {
         req.method === "DELETE" && req.path === "/users/me/logout";
       const isSearchUnitKerjaEndpoint =
         req.method === "GET" && req.path.startsWith("/unit-kerja");
+      const isGetProfileRequestEndpoint =
+        req.method === "GET" &&
+        req.path.startsWith("/users/me/profile-requests");
 
       if (
         !isCreateProfileEndpoint &&
         !isLogoutEndpoint &&
-        !isSearchUnitKerjaEndpoint
+        !isSearchUnitKerjaEndpoint &&
+        !isGetProfileRequestEndpoint
       ) {
         return res.status(403).json({
           errors:
