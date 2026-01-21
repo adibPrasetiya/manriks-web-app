@@ -96,6 +96,10 @@ export const authenticationMiddleware = async (req, res, next) => {
       }
     }
 
+    console.log("method:", req.method);
+    console.log("path:", req.path);
+    console.log("originalUrl:", req.originalUrl);
+
     // Check if profile is verified
     if (user.profile && !user.profile.isVerified) {
       const allowedEndpointsForUnverified = [
