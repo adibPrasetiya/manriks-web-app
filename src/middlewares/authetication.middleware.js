@@ -100,6 +100,7 @@ export const authenticationMiddleware = async (req, res, next) => {
     if (user.profile && !user.profile.isVerified) {
       const allowedEndpointsForUnverified = [
         { method: "DELETE", path: "/users/me/logout" },
+        { method: "GET", path: "/users/me/profiles" },
         { method: "GET", pathStartsWith: "/users/me/profile-requests" },
         { method: "POST", path: "/users/me/profile-requests" },
         { method: "DELETE", pathStartsWith: "/users/me/profile-requests/" },
