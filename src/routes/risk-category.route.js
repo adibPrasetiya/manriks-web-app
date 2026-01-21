@@ -12,13 +12,11 @@ export const riskCategoryRoutes = [
     method: "get",
     path: "/konteks/:konteksId/risk-categories",
     handler: riskCategoryController.search,
-    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "get",
     path: "/konteks/:konteksId/risk-categories/:id",
     handler: riskCategoryController.getById,
-    roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
   {
     method: "patch",
