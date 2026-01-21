@@ -457,6 +457,9 @@ const reject = async (requestId, adminUserId, reqBody) => {
 
   const request = await prismaClient.profileChangeRequest.findUnique({
     where: { id },
+    include: {
+      profile: true,
+    },
   });
 
   if (!request) {
@@ -470,34 +473,80 @@ const reject = async (requestId, adminUserId, reqBody) => {
     );
   }
 
-  const updatedRequest = await prismaClient.profileChangeRequest.update({
-    where: { id },
-    data: {
-      status: "REJECTED",
-      rejectionReason: reqBody.rejectionReason,
-      processedAt: new Date(),
-      processedBy: adminUserId.userId,
-    },
-    include: {
-      profile: {
-        select: {
-          userId: true,
-          user: {
+  // Handle berdasarkan request type
+  if (request.requestType === "INITIAL_VERIFICATION") {
+    // Untuk profile baru yang ditolak: hapus profile dan semua change requests
+    await prismaClient.$transaction([
+      prismaClient.profileChangeRequest.deleteMany({
+        where: { profileId: request.profileId },
+      }),
+      prismaClient.profile.delete({
+        where: { id: request.profileId },
+      }),
+    ]);
+
+    return {
+      message: "Profile ditolak dan dihapus. User dapat membuat profile baru.",
+      data: {
+        requestId: id,
+        rejectionReason: reqBody.rejectionReason,
+      },
+    };
+  } else {
+    // Untuk CHANGE request: kembalikan profile ke status terverifikasi
+
+    // Cari data verifikasi awal dari APPROVED INITIAL_VERIFICATION request
+    const initialVerification =
+      await prismaClient.profileChangeRequest.findFirst({
+        where: {
+          profileId: request.profileId,
+          requestType: "INITIAL_VERIFICATION",
+          status: "APPROVED",
+        },
+        orderBy: { processedAt: "desc" },
+      });
+
+    // Update profile dan request dalam transaction
+    const [updatedProfile, updatedRequest] = await prismaClient.$transaction([
+      prismaClient.profile.update({
+        where: { id: request.profileId },
+        data: {
+          isVerified: true,
+          verifiedAt: initialVerification?.processedAt || new Date(),
+          verifiedBy: initialVerification?.processedBy || adminUserId.userId,
+        },
+      }),
+      prismaClient.profileChangeRequest.update({
+        where: { id },
+        data: {
+          status: "REJECTED",
+          rejectionReason: reqBody.rejectionReason,
+          processedAt: new Date(),
+          processedBy: adminUserId.userId,
+        },
+        include: {
+          profile: {
             select: {
-              id: true,
-              name: true,
-              email: true,
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
             },
           },
         },
-      },
-    },
-  });
+      }),
+    ]);
 
-  return {
-    message: "Permintaan perubahan profile berhasil ditolak.",
-    data: updatedRequest,
-  };
+    return {
+      message:
+        "Permintaan perubahan profile ditolak. Profile dikembalikan ke status terverifikasi.",
+      data: updatedRequest,
+    };
+  }
 };
 
 /**
