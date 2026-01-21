@@ -173,12 +173,10 @@ const get = async (user) => {
     throw new ResponseError(404, "Profile tidak ditemukan");
   }
 
-  console.log(user);
-
   const profile = {
     username: user.username,
-    name: user.user.name,
-    email: user.user.email,
+    name: user.name,
+    email: user.email,
     roles: user.roles,
     jabatan: existingProfile.jabatan,
     unitKerja: {
