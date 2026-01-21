@@ -107,7 +107,6 @@ export const authenticationMiddleware = async (req, res, next) => {
         { method: "GET", path: "/users/me/profiles" },
         { method: "GET", pathStartsWith: "/users/me/profile-requests" },
         { method: "POST", path: "/users/me/profile-requests" },
-        { method: "DELETE", pathStartsWith: "/users/me/profile-requests/" },
         { method: "GET", pathStartsWith: "/unit-kerja" },
       ];
 

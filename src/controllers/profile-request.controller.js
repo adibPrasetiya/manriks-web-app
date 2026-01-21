@@ -6,7 +6,7 @@ const create = async (req, res, next) => {
   try {
     const result = await profileRequestService.create(
       req.user.userId,
-      req.body
+      req.body,
     );
     res.status(201).json({
       message: result.message,
@@ -21,7 +21,7 @@ const getMyRequests = async (req, res, next) => {
   try {
     const result = await profileRequestService.getMyRequests(
       req.user.userId,
-      req.query
+      req.query,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -33,19 +33,7 @@ const getMyRequestById = async (req, res, next) => {
   try {
     const result = await profileRequestService.getMyRequestById(
       req.user.userId,
-      req.params.requestId
-    );
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const cancelMyRequest = async (req, res, next) => {
-  try {
-    const result = await profileRequestService.cancelMyRequest(
-      req.user.userId,
-      req.params.requestId
+      req.params.requestId,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -77,7 +65,7 @@ const approve = async (req, res, next) => {
   try {
     const result = await profileRequestService.approve(
       req.params.requestId,
-      req.user.userId
+      req.user.userId,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -90,7 +78,7 @@ const reject = async (req, res, next) => {
     const result = await profileRequestService.reject(
       req.params.requestId,
       req.user.userId,
-      req.body
+      req.body,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -111,7 +99,6 @@ export default {
   create,
   getMyRequests,
   getMyRequestById,
-  cancelMyRequest,
   search,
   getById,
   approve,

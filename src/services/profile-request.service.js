@@ -222,55 +222,6 @@ const getMyRequestById = async (userId, requestId) => {
 };
 
 /**
- * Cancel user's pending request
- */
-const cancelMyRequest = async (userId, requestId) => {
-  userId = validate(userIdSchema, { userId: userId });
-  const { requestId: id } = validate(requestIdSchema, { requestId });
-
-  // Get user's profile
-  const profile = await prismaClient.profile.findUnique({
-    where: { userId: userId.userId },
-  });
-
-  if (!profile) {
-    throw new ResponseError(404, "Profile tidak ditemukan.");
-  }
-
-  const request = await prismaClient.profileChangeRequest.findUnique({
-    where: { id },
-  });
-
-  if (!request) {
-    throw new ResponseError(404, "Permintaan tidak ditemukan.");
-  }
-
-  // Verify the request belongs to the user
-  if (request.profileId !== profile.id) {
-    throw new ResponseError(
-      403,
-      "Anda tidak memiliki akses ke permintaan ini.",
-    );
-  }
-
-  // Only allow canceling pending requests
-  if (request.status !== "PENDING") {
-    throw new ResponseError(
-      400,
-      "Hanya permintaan dengan status PENDING yang dapat dibatalkan.",
-    );
-  }
-
-  await prismaClient.profileChangeRequest.delete({
-    where: { id },
-  });
-
-  return {
-    message: "Permintaan berhasil dibatalkan.",
-  };
-};
-
-/**
  * Search all change requests (admin only)
  */
 const search = async (queryParams) => {
@@ -616,7 +567,6 @@ export default {
   create,
   getMyRequests,
   getMyRequestById,
-  cancelMyRequest,
   search,
   getById,
   approve,
