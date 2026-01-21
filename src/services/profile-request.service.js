@@ -62,28 +62,47 @@ const create = async (userId, reqBody) => {
   const requestType = profile.isVerified ? "CHANGE" : "INITIAL_VERIFICATION";
 
   // Create the change request
-  const changeRequest = await prismaClient.profileChangeRequest.create({
-    data: {
-      profileId: profile.id,
-      requestType: requestType,
-      jabatan: reqBody.jabatan || null,
-      unitKerjaId: reqBody.unitKerjaId || null,
-      nomorHP: reqBody.nomorHP !== undefined ? reqBody.nomorHP : null,
-      status: "PENDING",
-      isVerified: false,
-    },
-    include: {
-      profile: {
-        select: {
-          userId: true,
-          jabatan: true,
-          unitKerja: true,
-          nomorHP: true,
-          isVerified: true,
-        },
+  const result = await prismaClient.$transaction(async (tx) => {
+    // 1. Update profile → set unverfied
+    const updatedProfile = await tx.profile.update({
+      where: {
+        id: profile.id,
       },
-      unitKerja: true,
-    },
+      data: {
+        isVerified: false,
+        verifiedAt: null,
+        verifiedBy: null,
+      },
+    });
+
+    // 2. Create profile change request
+    const changeRequest = await tx.profileChangeRequest.create({
+      data: {
+        profileId: profile.id,
+        requestType: requestType,
+        jabatan: reqBody.jabatan || null,
+        unitKerjaId: reqBody.unitKerjaId || null,
+        nomorHP: reqBody.nomorHP !== undefined ? reqBody.nomorHP : null,
+        status: "PENDING",
+      },
+      include: {
+        profile: {
+          select: {
+            userId: true,
+            jabatan: true,
+            unitKerja: true,
+            nomorHP: true,
+            isVerified: true,
+          },
+        },
+        unitKerja: true,
+      },
+    });
+
+    return {
+      updatedProfile,
+      changeRequest,
+    };
   });
 
   return {
@@ -91,7 +110,7 @@ const create = async (userId, reqBody) => {
       requestType === "INITIAL_VERIFICATION"
         ? "Permintaan verifikasi profile berhasil dibuat. Silakan tunggu persetujuan administrator."
         : "Permintaan perubahan profile berhasil dibuat. Silakan tunggu persetujuan administrator.",
-    data: changeRequest,
+    data: result.changeRequest,
   };
 };
 
