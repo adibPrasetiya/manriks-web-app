@@ -33,7 +33,7 @@ const registedNewUserSchema = Joi.object({
     .min(8)
     .max(255)
     .pattern(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_\-+=])[A-Za-z\d@$!%*?&#^()_\-+=]+$/
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_\-+=])[A-Za-z\d@$!%*?&#^()_\-+=]+$/,
     )
     .required()
     .messages({
@@ -68,19 +68,9 @@ const searchUserSchema = Joi.object({
     "string.max": "Username maksimal 255 karakter",
   }),
 
-  role: Joi.string()
-    .valid(
-      "USER",
-      "ADMINISTRATOR",
-      "CLIENT_ENTRY_OFFICER",
-      "SPBE_INDICATOR_ENTRY_OFFICER",
-      "TEAM_LEADER",
-      "SUBMISSION_ENTRY_OFFICER"
-    )
-    .messages({
-      "any.only":
-        "Role harus salah satu dari: USER, ADMINISTRATOR, CLIENT_ENTRY_OFFICER, SPBE_INDICATOR_ENTRY_OFFICER, TEAM_LEADER, SUBMISSION_ENTRY_OFFICER",
-    }),
+  role: Joi.string().valid("USER", "ADMINISTRATOR", "KOMITE_PUSAT").messages({
+    "any.only": "Role harus salah satu dari: USER, ADMINISTRATOR, KOMITE_PUSAT",
+  }),
 
   isActive: Joi.boolean().messages({
     "boolean.base": "isActive harus berupa boolean (true/false)",
@@ -121,7 +111,7 @@ const updatePasswordSchema = Joi.object({
     .min(8)
     .max(255)
     .pattern(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_\-+=])[A-Za-z\d@$!%*?&#^()_\-+=]+$/
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_\-+=])[A-Za-z\d@$!%*?&#^()_\-+=]+$/,
     )
     .required()
     .messages({
@@ -175,14 +165,15 @@ const updateUserByAdminSchema = Joi.object({
   }),
 
   roles: Joi.array()
-    .items(Joi.string().valid("USER", "ADMINISTRATOR"))
+    .items(Joi.string().valid("USER", "ADMINISTRATOR, KOMITE_PUSAT"))
     .min(1)
     .unique()
     .messages({
       "array.base": "Roles harus berupa array",
       "array.min": "Minimal harus ada 1 role",
       "array.unique": "Roles tidak boleh duplikat",
-      "any.only": "Role harus salah satu dari: USER, ADMINISTRATOR",
+      "any.only":
+        "Role harus salah satu dari: USER, ADMINISTRATOR, KOMITE_PUSAT",
     }),
 })
   .min(1)
