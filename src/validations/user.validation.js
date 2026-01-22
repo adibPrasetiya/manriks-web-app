@@ -165,7 +165,7 @@ const updateUserByAdminSchema = Joi.object({
   }),
 
   roles: Joi.array()
-    .items(Joi.string().valid("USER", "ADMINISTRATOR, KOMITE_PUSAT"))
+    .items(Joi.string().valid("USER", "ADMINISTRATOR", "KOMITE_PUSAT"))
     .min(1)
     .unique()
     .messages({
