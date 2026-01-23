@@ -16,6 +16,12 @@ export const ASSET_STATUSES = {
   INACTIVE: "INACTIVE",
   ARCHIVED: "ARCHIVED",
 };
+
+export const RISK_WORKSHEET_STATUSES = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+  ARCHIVED: "ARCHIVED",
+};
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS;
 export const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET ||

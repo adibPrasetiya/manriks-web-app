@@ -6,619 +6,537 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Memulai seeding database...\n");
 
+  // Clear existing data (in correct order to avoid FK constraints)
+  console.log("🗑️ Menghapus data lama...");
+  await prisma.riskWorksheet.deleteMany({});
+  await prisma.asset.deleteMany({});
+  await prisma.assetCategory.deleteMany({});
+  await prisma.riskMatrix.deleteMany({});
+  await prisma.likelihoodScale.deleteMany({});
+  await prisma.impactScale.deleteMany({});
+  await prisma.riskCategory.deleteMany({});
+  await prisma.konteks.deleteMany({});
+  await prisma.profileChangeRequest.deleteMany({});
+  await prisma.profile.deleteMany({});
+  await prisma.session.deleteMany({});
+  await prisma.userRole.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.unitKerja.deleteMany({});
+  await prisma.role.deleteMany({});
+  console.log("✅ Data lama berhasil dihapus\n");
+
   // 1. Seed Roles
   console.log("📝 Seeding Roles...");
-  const roleUser = await prisma.role.upsert({
-    where: { name: "USER" },
-    update: {},
-    create: {
-      name: "USER",
-      description: "Role untuk pengguna biasa",
-    },
+  const roleUser = await prisma.role.create({
+    data: { name: "USER", description: "Role untuk pengguna biasa" },
   });
-
-  const roleAdmin = await prisma.role.upsert({
-    where: { name: "ADMINISTRATOR" },
-    update: {},
-    create: {
-      name: "ADMINISTRATOR",
-      description: "Role untuk administrator sistem",
-    },
+  const roleAdmin = await prisma.role.create({
+    data: { name: "ADMINISTRATOR", description: "Role untuk administrator sistem" },
   });
-
-  const roleKomitePusat = await prisma.role.upsert({
-    where: { name: "KOMITE_PUSAT" },
-    update: {},
-    create: {
-      name: "KOMITE_PUSAT",
-      description: "Role untuk Komite Pusat yang dapat mengelola konteks manajemen risiko",
-    },
+  const roleKomitePusat = await prisma.role.create({
+    data: { name: "KOMITE_PUSAT", description: "Role untuk Komite Pusat yang dapat mengelola konteks manajemen risiko" },
   });
-
-  const rolePengelolaRisikoUker = await prisma.role.upsert({
-    where: { name: "PENGELOLA_RISIKO_UKER" },
-    update: {},
-    create: {
-      name: "PENGELOLA_RISIKO_UKER",
-      description: "Role untuk Pengelola Risiko Unit Kerja yang dapat mengelola aset di unit kerjanya",
-    },
+  const rolePengelolaRisikoUker = await prisma.role.create({
+    data: { name: "PENGELOLA_RISIKO_UKER", description: "Role untuk Pengelola Risiko Unit Kerja" },
   });
   console.log("✅ Roles berhasil di-seed\n");
 
-  // Store admin user id for verification references
-  let adminUserId = null;
-
-  // 2. Seed Unit Kerja
+  // 2. Seed Unit Kerja (hanya 2)
   console.log("🏢 Seeding Unit Kerja...");
-  const unitKerjaData = [
-    {
-      name: "Divisi IT & Teknologi",
-      code: "IT-001",
-      email: "it@company.com",
+  const sekretariatJenderal = await prisma.unitKerja.create({
+    data: {
+      name: "Sekretariat Jenderal",
+      code: "SETJEN",
+      email: "setjen@kementerian.go.id",
     },
-    {
-      name: "Divisi Keuangan & Akuntansi",
-      code: "FIN-001",
-      email: "finance@company.com",
+  });
+  const direktoratPelayananPublik = await prisma.unitKerja.create({
+    data: {
+      name: "Direktorat Pelayanan Publik",
+      code: "DIT-PP",
+      email: "pelayananpublik@kementerian.go.id",
     },
-    {
-      name: "Divisi SDM & Umum",
-      code: "HRD-001",
-      email: "hrd@company.com",
-    },
-    {
-      name: "Divisi Operasional",
-      code: "OPS-001",
-      email: "operations@company.com",
-    },
-    {
-      name: "Divisi Pemasaran & Komunikasi",
-      code: "MKT-001",
-      email: "marketing@company.com",
-    },
-  ];
-
-  const unitKerjaRecords = [];
-  for (const data of unitKerjaData) {
-    const unitKerja = await prisma.unitKerja.upsert({
-      where: { code: data.code },
-      update: {},
-      create: data,
-    });
-    unitKerjaRecords.push(unitKerja);
-    console.log(`   ✓ ${data.name} (${data.code})`);
-  }
+  });
+  console.log(`   ✓ ${sekretariatJenderal.name} (${sekretariatJenderal.code})`);
+  console.log(`   ✓ ${direktoratPelayananPublik.name} (${direktoratPelayananPublik.code})`);
   console.log("✅ Unit Kerja berhasil di-seed\n");
 
-  // 3. Seed Users dengan Profiles
-  console.log("👤 Seeding Users & Profiles...");
+  // 3. Seed Users
+  console.log("👤 Seeding Users...");
   const hashedPassword = await bcrypt.hash("password123", 10);
   const verifiedAt = new Date();
 
-  const usersData = [
-    {
+  // Admin di Sekretariat Jenderal (active, verified, has profile)
+  const adminUser = await prisma.user.create({
+    data: {
       username: "admin",
       name: "Administrator Sistem",
-      email: "admin@company.com",
+      email: "admin@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: true,
-      roleId: roleAdmin.id,
+      userRoles: { create: { roleId: roleAdmin.id } },
       profile: {
-        jabatan: "System Administrator",
-        unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-        nomorHP: "081234567890",
-        isVerified: true,
-        verifiedAt: verifiedAt,
-        // verifiedBy akan di-update setelah admin user dibuat
+        create: {
+          jabatan: "Kepala Bagian TIK",
+          unitKerjaId: sekretariatJenderal.id,
+          nomorHP: "081234567890",
+          isVerified: true,
+          verifiedAt: verifiedAt,
+        },
       },
     },
-    {
-      username: "komite.pusat",
-      name: "Komite Pusat",
-      email: "komite.pusat@company.com",
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${adminUser.name} (ADMINISTRATOR) - Sekretariat Jenderal`);
+
+  // Komite Pusat di Sekretariat Jenderal (active, verified, has profile)
+  const komitePusatSetjen = await prisma.user.create({
+    data: {
+      username: "komite.setjen",
+      name: "Komite Pusat Setjen",
+      email: "komite.setjen@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: true,
-      roleId: roleKomitePusat.id,
+      userRoles: { create: { roleId: roleKomitePusat.id } },
       profile: {
-        jabatan: "Ketua Komite Pusat",
-        unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-        nomorHP: "081234567899",
-        isVerified: true,
-        verifiedAt: verifiedAt,
+        create: {
+          jabatan: "Ketua Tim Manajemen Risiko",
+          unitKerjaId: sekretariatJenderal.id,
+          nomorHP: "081234567891",
+          isVerified: true,
+          verifiedAt: verifiedAt,
+        },
       },
     },
-    {
-      username: "john.doe",
-      name: "John Doe",
-      email: "john.doe@company.com",
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${komitePusatSetjen.name} (KOMITE_PUSAT) - Sekretariat Jenderal`);
+
+  // Komite Pusat di Direktorat Pelayanan Publik (active, verified, has profile)
+  const komitePusatDitPP = await prisma.user.create({
+    data: {
+      username: "komite.ditpp",
+      name: "Komite Pusat Dit PP",
+      email: "komite.ditpp@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: true,
-      roleId: roleUser.id,
+      userRoles: { create: { roleId: roleKomitePusat.id } },
       profile: {
-        jabatan: "IT Manager",
-        unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-        nomorHP: "081234567891",
-        isVerified: true,
-        verifiedAt: verifiedAt,
+        create: {
+          jabatan: "Koordinator Risiko",
+          unitKerjaId: direktoratPelayananPublik.id,
+          nomorHP: "081234567892",
+          isVerified: true,
+          verifiedAt: verifiedAt,
+        },
       },
     },
-    {
-      username: "jane.smith",
-      name: "Jane Smith",
-      email: "jane.smith@company.com",
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${komitePusatDitPP.name} (KOMITE_PUSAT) - Direktorat Pelayanan Publik`);
+
+  // Pengelola Risiko UKer di Direktorat Pelayanan Publik (active, verified, has profile)
+  const pengelolaRisikoDitPP = await prisma.user.create({
+    data: {
+      username: "pengelola.ditpp",
+      name: "Pengelola Risiko Dit PP",
+      email: "pengelola.ditpp@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: true,
-      roleId: roleUser.id,
+      userRoles: { create: { roleId: rolePengelolaRisikoUker.id } },
       profile: {
-        jabatan: "Finance Manager",
-        unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
-        nomorHP: "081234567892",
-        isVerified: true,
-        verifiedAt: verifiedAt,
+        create: {
+          jabatan: "Analis Risiko",
+          unitKerjaId: direktoratPelayananPublik.id,
+          nomorHP: "081234567893",
+          isVerified: true,
+          verifiedAt: verifiedAt,
+        },
       },
     },
-    {
-      username: "bob.wilson",
-      name: "Bob Wilson",
-      email: "bob.wilson@company.com",
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${pengelolaRisikoDitPP.name} (PENGELOLA_RISIKO_UKER) - Direktorat Pelayanan Publik`);
+
+  // Pengelola Risiko kedua di Direktorat Pelayanan Publik (untuk testing shared access)
+  const pengelolaRisikoDitPP2 = await prisma.user.create({
+    data: {
+      username: "pengelola2.ditpp",
+      name: "Pengelola Risiko 2 Dit PP",
+      email: "pengelola2.ditpp@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: true,
-      roleId: roleUser.id,
+      userRoles: { create: { roleId: rolePengelolaRisikoUker.id } },
       profile: {
-        jabatan: "HR Manager",
-        unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
-        nomorHP: "081234567893",
-        isVerified: true,
-        verifiedAt: verifiedAt,
+        create: {
+          jabatan: "Staf Analis Risiko",
+          unitKerjaId: direktoratPelayananPublik.id,
+          nomorHP: "081234567894",
+          isVerified: true,
+          verifiedAt: verifiedAt,
+        },
       },
     },
-    {
-      username: "alice.brown",
-      name: "Alice Brown",
-      email: "alice.brown@company.com",
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${pengelolaRisikoDitPP2.name} (PENGELOLA_RISIKO_UKER) - Direktorat Pelayanan Publik`);
+
+  // User INACTIVE (tidak bisa login)
+  const inactiveUser = await prisma.user.create({
+    data: {
+      username: "user.inactive",
+      name: "User Tidak Aktif",
+      email: "inactive@kementerian.go.id",
+      password: hashedPassword,
+      isActive: false,
+      isVerified: true,
+      userRoles: { create: { roleId: roleUser.id } },
+      profile: {
+        create: {
+          jabatan: "Staf",
+          unitKerjaId: sekretariatJenderal.id,
+          nomorHP: "081234567895",
+          isVerified: true,
+          verifiedAt: verifiedAt,
+        },
+      },
+    },
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${inactiveUser.name} (USER - INACTIVE)`);
+
+  // User tanpa profile (belum buat profile)
+  const userNoProfile = await prisma.user.create({
+    data: {
+      username: "user.noprofile",
+      name: "User Tanpa Profile",
+      email: "noprofile@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: true,
-      roleId: roleUser.id,
-      profile: {
-        jabatan: "Operations Supervisor",
-        unitKerjaId: unitKerjaRecords[3].id, // Operasional
-        nomorHP: null, // Optional - tidak diisi
-        isVerified: true,
-        verifiedAt: verifiedAt,
-      },
+      userRoles: { create: { roleId: roleUser.id } },
     },
-    {
-      username: "charlie.davis",
-      name: "Charlie Davis",
-      email: "charlie.davis@company.com",
-      password: hashedPassword,
-      isActive: true,
-      isVerified: false, // User yang belum verified
-      roleId: roleUser.id,
-      profile: {
-        jabatan: "Marketing Executive",
-        unitKerjaId: unitKerjaRecords[4].id, // Pemasaran & Komunikasi
-        nomorHP: null,
-        isVerified: false, // Profile belum diverifikasi
-      },
-    },
-    // Users dengan profile belum terverifikasi (untuk testing verification feature)
-    {
-      username: "diana.miller",
-      name: "Diana Miller",
-      email: "diana.miller@company.com",
+  });
+  console.log(`   ✓ ${userNoProfile.name} (USER - NO PROFILE)`);
+
+  // User dengan profile belum diverifikasi
+  const userUnverifiedProfile = await prisma.user.create({
+    data: {
+      username: "user.unverified",
+      name: "User Profile Belum Verified",
+      email: "unverified@kementerian.go.id",
       password: hashedPassword,
       isActive: true,
       isVerified: false,
-      roleId: roleUser.id,
+      userRoles: { create: { roleId: roleUser.id } },
       profile: {
-        jabatan: "Junior Developer",
-        unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-        nomorHP: "081234567894",
-        isVerified: false, // Profile belum diverifikasi - akan buat PENDING request
+        create: {
+          jabatan: "Staf Baru",
+          unitKerjaId: direktoratPelayananPublik.id,
+          nomorHP: "081234567896",
+          isVerified: false,
+        },
       },
     },
-    {
-      username: "evan.thomas",
-      name: "Evan Thomas",
-      email: "evan.thomas@company.com",
-      password: hashedPassword,
+    include: { profile: true },
+  });
+  console.log(`   ✓ ${userUnverifiedProfile.name} (USER - UNVERIFIED PROFILE)`);
+
+  // Update verifiedBy
+  await prisma.profile.updateMany({
+    where: { isVerified: true, verifiedBy: null },
+    data: { verifiedBy: adminUser.id },
+  });
+  console.log("✅ Users berhasil di-seed\n");
+
+  // 4. Seed Konteks (5x5 active, 3x3 inactive)
+  console.log("📋 Seeding Konteks...");
+
+  // Konteks 5x5 (ACTIVE)
+  const konteks5x5 = await prisma.konteks.create({
+    data: {
+      name: "Konteks Manajemen Risiko 2024-2025",
+      code: "KMR-2024-5X5",
+      description: "Konteks manajemen risiko dengan matriks 5x5 untuk periode 2024-2025",
+      periodStart: 2024,
+      periodEnd: 2025,
+      matrixSize: 5,
+      riskAppetiteLevel: "MEDIUM",
+      riskAppetiteDescription: "Organisasi bersedia menerima risiko dengan dampak medium untuk mencapai tujuan strategis",
       isActive: true,
-      isVerified: false,
-      roleId: roleUser.id,
-      profile: {
-        jabatan: "Accountant",
-        unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
-        nomorHP: "081234567895",
-        isVerified: false, // Profile belum diverifikasi - akan buat PENDING request
-      },
+      createdBy: komitePusatSetjen.id,
+      updatedBy: komitePusatSetjen.id,
     },
-    {
-      username: "fiona.garcia",
-      name: "Fiona Garcia",
-      email: "fiona.garcia@company.com",
-      password: hashedPassword,
-      isActive: true,
-      isVerified: false,
-      roleId: roleUser.id,
-      profile: {
-        jabatan: "HR Staff",
-        unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
-        nomorHP: "081234567896",
-        isVerified: false, // Profile belum diverifikasi - akan buat REJECTED request
-      },
-    },
-    {
-      username: "george.lee",
-      name: "George Lee",
-      email: "george.lee@company.com",
-      password: hashedPassword,
-      isActive: true,
-      isVerified: true,
-      roleId: roleUser.id,
-      profile: {
-        jabatan: "Senior Operator",
-        unitKerjaId: unitKerjaRecords[3].id, // Operasional
-        nomorHP: "081234567897",
-        isVerified: true,
-        verifiedAt: verifiedAt,
-        // User yang sudah verified tapi request perubahan data (CHANGE request)
-      },
-    },
+  });
+  console.log(`   ✓ ${konteks5x5.name} (5x5, ACTIVE)`);
+
+  // Risk Categories untuk 5x5
+  const riskCategories5x5 = [
+    { name: "Risiko Strategis", description: "Risiko yang mempengaruhi pencapaian tujuan strategis", order: 1 },
+    { name: "Risiko Operasional", description: "Risiko yang timbul dari proses operasional", order: 2 },
+    { name: "Risiko Keuangan", description: "Risiko yang berkaitan dengan pengelolaan keuangan", order: 3 },
+    { name: "Risiko Kepatuhan", description: "Risiko terkait kepatuhan terhadap regulasi", order: 4 },
   ];
 
-  const createdUsers = {};
-
-  for (const userData of usersData) {
-    const { roleId, profile, ...userCreateData } = userData;
-
-    // Cek apakah user sudah ada
-    const existingUser = await prisma.user.findUnique({
-      where: { email: userCreateData.email },
-      include: { profile: true },
+  for (const cat of riskCategories5x5) {
+    const category = await prisma.riskCategory.create({
+      data: { ...cat, konteksId: konteks5x5.id },
     });
 
-    if (existingUser) {
-      console.log(`   ⚠ User ${userCreateData.email} sudah ada, skip...`);
-      createdUsers[userCreateData.username] = existingUser;
-      continue;
+    // Likelihood Scales (1-5)
+    const likelihoodLabels = [
+      { level: 1, label: "Sangat Jarang", description: "Kemungkinan terjadi < 5%" },
+      { level: 2, label: "Jarang", description: "Kemungkinan terjadi 5% - 25%" },
+      { level: 3, label: "Kadang-kadang", description: "Kemungkinan terjadi 25% - 50%" },
+      { level: 4, label: "Sering", description: "Kemungkinan terjadi 50% - 75%" },
+      { level: 5, label: "Sangat Sering", description: "Kemungkinan terjadi > 75%" },
+    ];
+    for (const ls of likelihoodLabels) {
+      await prisma.likelihoodScale.create({
+        data: { ...ls, riskCategoryId: category.id },
+      });
     }
 
-    // Buat user dengan profile dan role
-    const user = await prisma.user.create({
-      data: {
-        ...userCreateData,
-        profile: {
-          create: profile,
+    // Impact Scales (1-5)
+    const impactLabels = [
+      { level: 1, label: "Tidak Signifikan", description: "Dampak sangat kecil, dapat diabaikan" },
+      { level: 2, label: "Minor", description: "Dampak kecil, tidak mengganggu operasional" },
+      { level: 3, label: "Moderat", description: "Dampak sedang, mengganggu sebagian operasional" },
+      { level: 4, label: "Signifikan", description: "Dampak besar, mengganggu operasional secara serius" },
+      { level: 5, label: "Katastropik", description: "Dampak sangat besar, mengancam keberlangsungan" },
+    ];
+    for (const is of impactLabels) {
+      await prisma.impactScale.create({
+        data: { ...is, riskCategoryId: category.id },
+      });
+    }
+  }
+
+  // Risk Matrix 5x5
+  const riskLevels5x5 = {
+    "1-1": "LOW", "1-2": "LOW", "1-3": "LOW", "1-4": "MEDIUM", "1-5": "MEDIUM",
+    "2-1": "LOW", "2-2": "LOW", "2-3": "MEDIUM", "2-4": "MEDIUM", "2-5": "HIGH",
+    "3-1": "LOW", "3-2": "MEDIUM", "3-3": "MEDIUM", "3-4": "HIGH", "3-5": "HIGH",
+    "4-1": "MEDIUM", "4-2": "MEDIUM", "4-3": "HIGH", "4-4": "HIGH", "4-5": "CRITICAL",
+    "5-1": "MEDIUM", "5-2": "HIGH", "5-3": "HIGH", "5-4": "CRITICAL", "5-5": "CRITICAL",
+  };
+  for (let l = 1; l <= 5; l++) {
+    for (let i = 1; i <= 5; i++) {
+      await prisma.riskMatrix.create({
+        data: {
+          konteksId: konteks5x5.id,
+          likelihoodLevel: l,
+          impactLevel: i,
+          riskLevel: riskLevels5x5[`${l}-${i}`],
         },
-        userRoles: {
-          create: {
-            roleId: roleId,
-          },
-        },
-      },
-      include: {
-        profile: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
-      },
+      });
+    }
+  }
+  console.log(`   ✓ Risk Categories, Scales, dan Matrix untuk ${konteks5x5.name} berhasil dibuat`);
+
+  // Konteks 3x3 (INACTIVE)
+  const konteks3x3 = await prisma.konteks.create({
+    data: {
+      name: "Konteks Manajemen Risiko 2023",
+      code: "KMR-2023-3X3",
+      description: "Konteks manajemen risiko dengan matriks 3x3 untuk periode 2023 (draft)",
+      periodStart: 2023,
+      periodEnd: 2023,
+      matrixSize: 3,
+      riskAppetiteLevel: "LOW",
+      riskAppetiteDescription: "Organisasi memiliki toleransi risiko rendah",
+      isActive: false,
+      createdBy: komitePusatSetjen.id,
+      updatedBy: komitePusatSetjen.id,
+    },
+  });
+  console.log(`   ✓ ${konteks3x3.name} (3x3, INACTIVE)`);
+
+  // Risk Categories untuk 3x3
+  const riskCategories3x3 = [
+    { name: "Risiko Operasional", description: "Risiko operasional sederhana", order: 1 },
+    { name: "Risiko SDM", description: "Risiko sumber daya manusia", order: 2 },
+  ];
+
+  for (const cat of riskCategories3x3) {
+    const category = await prisma.riskCategory.create({
+      data: { ...cat, konteksId: konteks3x3.id },
     });
 
-    // Simpan user untuk referensi
-    createdUsers[user.username] = user;
-
-    // Simpan adminUserId untuk referensi verifiedBy
-    if (user.username === "admin") {
-      adminUserId = user.id;
+    // Likelihood Scales (1-3)
+    const likelihoodLabels = [
+      { level: 1, label: "Rendah", description: "Kemungkinan kecil" },
+      { level: 2, label: "Sedang", description: "Kemungkinan sedang" },
+      { level: 3, label: "Tinggi", description: "Kemungkinan tinggi" },
+    ];
+    for (const ls of likelihoodLabels) {
+      await prisma.likelihoodScale.create({
+        data: { ...ls, riskCategoryId: category.id },
+      });
     }
 
-    console.log(
-      `   ✓ ${user.name} (${user.email}) - ${user.userRoles[0].role.name} - ${user.profile.jabatan}`
-    );
+    // Impact Scales (1-3)
+    const impactLabels = [
+      { level: 1, label: "Rendah", description: "Dampak kecil" },
+      { level: 2, label: "Sedang", description: "Dampak sedang" },
+      { level: 3, label: "Tinggi", description: "Dampak besar" },
+    ];
+    for (const is of impactLabels) {
+      await prisma.impactScale.create({
+        data: { ...is, riskCategoryId: category.id },
+      });
+    }
   }
 
-  // Update verifiedBy untuk profiles yang sudah terverifikasi
-  if (adminUserId) {
-    await prisma.profile.updateMany({
-      where: {
-        isVerified: true,
-        verifiedBy: null,
-      },
-      data: {
-        verifiedBy: adminUserId,
-      },
-    });
-  }
-
-  console.log("✅ Users & Profiles berhasil di-seed\n");
-
-  // 4. Seed Profile Change Requests
-  console.log("📋 Seeding Profile Change Requests...");
-
-  // Hapus existing requests untuk fresh seed
-  await prisma.profileChangeRequest.deleteMany({});
-
-  // Buat sample ProfileChangeRequest untuk testing
-  const profileChangeRequestsData = [];
-
-  // PENDING - Initial Verification Request (diana.miller)
-  if (createdUsers["diana.miller"]?.profile) {
-    profileChangeRequestsData.push({
-      profileId: createdUsers["diana.miller"].profile.id,
-      requestType: "INITIAL_VERIFICATION",
-      jabatan: "Senior Developer", // Request jabatan baru
-      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-      nomorHP: "081234567894",
-      status: "PENDING",
-      requestedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 hari lalu
-    });
-  }
-
-  // PENDING - Initial Verification Request (evan.thomas)
-  if (createdUsers["evan.thomas"]?.profile) {
-    profileChangeRequestsData.push({
-      profileId: createdUsers["evan.thomas"].profile.id,
-      requestType: "INITIAL_VERIFICATION",
-      jabatan: "Senior Accountant", // Request jabatan baru
-      unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
-      nomorHP: "081234567895",
-      status: "PENDING",
-      requestedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 hari lalu
-    });
-  }
-
-  // REJECTED - Initial Verification Request (fiona.garcia)
-  if (createdUsers["fiona.garcia"]?.profile) {
-    profileChangeRequestsData.push({
-      profileId: createdUsers["fiona.garcia"].profile.id,
-      requestType: "INITIAL_VERIFICATION",
-      jabatan: "HR Manager", // Request jabatan yang tidak sesuai
-      unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
-      nomorHP: "081234567896",
-      status: "REJECTED",
-      rejectionReason: "Jabatan yang diajukan tidak sesuai dengan posisi entry level. Silakan ajukan jabatan yang sesuai dengan pengalaman kerja.",
-      requestedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 hari lalu
-      processedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 hari lalu
-      processedBy: adminUserId,
-    });
-  }
-
-  // PENDING - Change Request (george.lee - user yang sudah verified ingin ubah data)
-  if (createdUsers["george.lee"]?.profile) {
-    profileChangeRequestsData.push({
-      profileId: createdUsers["george.lee"].profile.id,
-      requestType: "CHANGE",
-      jabatan: "Operations Manager", // Request promosi
-      unitKerjaId: unitKerjaRecords[3].id, // Operasional (tetap sama)
-      nomorHP: "081234567897",
-      status: "PENDING",
-      requestedAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 jam lalu
-    });
-  }
-
-  // APPROVED - Change Request historical (john.doe)
-  if (createdUsers["john.doe"]?.profile) {
-    profileChangeRequestsData.push({
-      profileId: createdUsers["john.doe"].profile.id,
-      requestType: "CHANGE",
-      jabatan: "IT Manager", // Dari Staff menjadi Manager (sudah diapprove)
-      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-      nomorHP: "081234567891",
-      status: "APPROVED",
-      requestedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 hari lalu
-      processedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000), // 28 hari lalu
-      processedBy: adminUserId,
-    });
-  }
-
-  // PENDING - Initial Verification Request (charlie.davis)
-  if (createdUsers["charlie.davis"]?.profile) {
-    profileChangeRequestsData.push({
-      profileId: createdUsers["charlie.davis"].profile.id,
-      requestType: "INITIAL_VERIFICATION",
-      jabatan: "Marketing Manager", // Request jabatan baru
-      unitKerjaId: unitKerjaRecords[4].id, // Pemasaran & Komunikasi
-      nomorHP: "081234567800",
-      status: "PENDING",
-      requestedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 hari lalu
-    });
-  }
-
-  for (const requestData of profileChangeRequestsData) {
-    const request = await prisma.profileChangeRequest.create({
-      data: requestData,
-      include: {
-        profile: {
-          include: {
-            user: true,
-          },
+  // Risk Matrix 3x3
+  const riskLevels3x3 = {
+    "1-1": "LOW", "1-2": "LOW", "1-3": "MEDIUM",
+    "2-1": "LOW", "2-2": "MEDIUM", "2-3": "HIGH",
+    "3-1": "MEDIUM", "3-2": "HIGH", "3-3": "CRITICAL",
+  };
+  for (let l = 1; l <= 3; l++) {
+    for (let i = 1; i <= 3; i++) {
+      await prisma.riskMatrix.create({
+        data: {
+          konteksId: konteks3x3.id,
+          likelihoodLevel: l,
+          impactLevel: i,
+          riskLevel: riskLevels3x3[`${l}-${i}`],
         },
-      },
-    });
-    console.log(
-      `   ✓ ${request.requestType} request for ${request.profile.user.name} - Status: ${request.status}`
-    );
+      });
+    }
   }
-
-  console.log("✅ Profile Change Requests berhasil di-seed\n");
+  console.log(`   ✓ Risk Categories, Scales, dan Matrix untuk ${konteks3x3.name} berhasil dibuat`);
+  console.log("✅ Konteks berhasil di-seed\n");
 
   // 5. Seed Asset Categories
   console.log("📦 Seeding Asset Categories...");
   const assetCategoriesData = [
-    {
-      name: "Perangkat Keras",
-      description: "Aset berupa perangkat keras seperti komputer, server, dan peralatan jaringan",
-    },
-    {
-      name: "Perangkat Lunak",
-      description: "Aset berupa aplikasi, sistem operasi, dan lisensi software",
-    },
-    {
-      name: "Infrastruktur",
-      description: "Aset berupa gedung, ruangan, dan fasilitas fisik",
-    },
-    {
-      name: "Data & Informasi",
-      description: "Aset berupa data pelanggan, dokumen penting, dan informasi bisnis",
-    },
-    {
-      name: "Sumber Daya Manusia",
-      description: "Aset berupa pengetahuan dan keterampilan karyawan",
-    },
+    { name: "Perangkat Keras", description: "Komputer, server, peralatan jaringan" },
+    { name: "Perangkat Lunak", description: "Aplikasi, sistem operasi, lisensi" },
+    { name: "Infrastruktur", description: "Gedung, ruangan, fasilitas" },
+    { name: "Data & Informasi", description: "Database, dokumen, arsip" },
+    { name: "Sumber Daya Manusia", description: "Pengetahuan, keterampilan pegawai" },
+    { name: "Kendaraan Dinas", description: "Mobil, motor, kendaraan operasional" },
+    { name: "Peralatan Kantor", description: "Meja, kursi, alat tulis kantor" },
   ];
 
   const assetCategories = [];
-  for (const data of assetCategoriesData) {
-    const category = await prisma.assetCategory.upsert({
-      where: { name: data.name },
-      update: {},
-      create: data,
-    });
+  for (const cat of assetCategoriesData) {
+    const category = await prisma.assetCategory.create({ data: cat });
     assetCategories.push(category);
-    console.log(`   ✓ ${data.name}`);
+    console.log(`   ✓ ${category.name}`);
   }
   console.log("✅ Asset Categories berhasil di-seed\n");
 
-  // 6. Seed Pengelola Risiko User
-  console.log("👤 Seeding Pengelola Risiko User...");
-  const pengelolaRisikoData = {
-    username: "pengelola.risiko",
-    name: "Pengelola Risiko IT",
-    email: "pengelola.risiko@company.com",
-    password: hashedPassword,
-    isActive: true,
-    isVerified: true,
-    roleId: rolePengelolaRisikoUker.id,
-    profile: {
-      jabatan: "Risk Officer",
-      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-      nomorHP: "081234567900",
-      isVerified: true,
-      verifiedAt: verifiedAt,
-    },
-  };
-
-  const existingPengelolaRisiko = await prisma.user.findUnique({
-    where: { email: pengelolaRisikoData.email },
-  });
-
-  if (!existingPengelolaRisiko) {
-    const { roleId, profile, ...userCreateData } = pengelolaRisikoData;
-    const pengelolaRisiko = await prisma.user.create({
-      data: {
-        ...userCreateData,
-        profile: {
-          create: {
-            ...profile,
-            verifiedBy: adminUserId,
-          },
-        },
-        userRoles: {
-          create: {
-            roleId: roleId,
-          },
-        },
-      },
-      include: {
-        profile: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
-    createdUsers[pengelolaRisiko.username] = pengelolaRisiko;
-    console.log(
-      `   ✓ ${pengelolaRisiko.name} (${pengelolaRisiko.email}) - ${pengelolaRisiko.userRoles[0].role.name}`
-    );
-  } else {
-    console.log(`   ⚠ User ${pengelolaRisikoData.email} sudah ada, skip...`);
-  }
-  console.log("✅ Pengelola Risiko User berhasil di-seed\n");
-
-  // 7. Seed Sample Assets
-  console.log("💼 Seeding Sample Assets...");
+  // 6. Seed Assets (lengkap untuk kedua unit kerja)
+  console.log("💼 Seeding Assets...");
   const assetsData = [
-    {
-      name: "Server Utama Data Center",
-      code: "SRV-001",
-      description: "Server utama untuk data center",
-      owner: "Tim Infrastructure",
-      categoryId: assetCategories[0].id, // Perangkat Keras
-      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-      status: "ACTIVE",
-    },
-    {
-      name: "Aplikasi ERP",
-      code: "APP-001",
-      description: "Sistem ERP perusahaan",
-      owner: "Tim Development",
-      categoryId: assetCategories[1].id, // Perangkat Lunak
-      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-      status: "ACTIVE",
-    },
-    {
-      name: "Database Pelanggan",
-      code: "DATA-001",
-      description: "Database informasi pelanggan",
-      owner: "Tim Data",
-      categoryId: assetCategories[3].id, // Data & Informasi
-      unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
-      status: "ACTIVE",
-    },
-    {
-      name: "Gedung Kantor Pusat",
-      code: "INFRA-001",
-      description: "Gedung kantor pusat perusahaan",
-      owner: "Facilities Management",
-      categoryId: assetCategories[2].id, // Infrastruktur
-      unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
-      status: "ACTIVE",
-    },
-    {
-      name: "Server Backup",
-      code: "SRV-002",
-      description: "Server untuk backup data",
-      owner: "Tim Infrastructure",
-      categoryId: assetCategories[0].id, // Perangkat Keras
-      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
-      status: "INACTIVE",
-    },
+    // Sekretariat Jenderal
+    { name: "Server Utama Data Center", code: "SRV-SETJEN-001", description: "Server utama data center Setjen", owner: "Bagian TIK", categoryIdx: 0, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Server Backup", code: "SRV-SETJEN-002", description: "Server backup data", owner: "Bagian TIK", categoryIdx: 0, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Aplikasi SIMPEG", code: "APP-SETJEN-001", description: "Sistem Informasi Kepegawaian", owner: "Bagian SDM", categoryIdx: 1, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Aplikasi E-Office", code: "APP-SETJEN-002", description: "Aplikasi persuratan elektronik", owner: "Bagian TIK", categoryIdx: 1, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Gedung Kantor Pusat", code: "GDG-SETJEN-001", description: "Gedung utama kantor Setjen", owner: "Bagian Umum", categoryIdx: 2, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Database Pegawai", code: "DATA-SETJEN-001", description: "Database informasi pegawai", owner: "Bagian SDM", categoryIdx: 3, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Arsip Digital", code: "DATA-SETJEN-002", description: "Sistem arsip digital", owner: "Bagian Kearsipan", categoryIdx: 3, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Tim IT Support", code: "SDM-SETJEN-001", description: "Tim pendukung TIK", owner: "Bagian TIK", categoryIdx: 4, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Mobil Dinas Sekjen", code: "KND-SETJEN-001", description: "Kendaraan dinas Sekretaris Jenderal", owner: "Bagian Umum", categoryIdx: 5, unitKerja: sekretariatJenderal, status: "ACTIVE" },
+    { name: "Printer Kantor Lantai 1", code: "PRK-SETJEN-001", description: "Printer multifungsi lantai 1", owner: "Bagian Umum", categoryIdx: 6, unitKerja: sekretariatJenderal, status: "INACTIVE" },
+
+    // Direktorat Pelayanan Publik
+    { name: "Server Layanan Publik", code: "SRV-DITPP-001", description: "Server untuk layanan publik online", owner: "Seksi TIK", categoryIdx: 0, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Aplikasi Layanan Online", code: "APP-DITPP-001", description: "Aplikasi layanan publik online", owner: "Seksi TIK", categoryIdx: 1, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Aplikasi Antrian", code: "APP-DITPP-002", description: "Sistem antrian layanan", owner: "Seksi TIK", categoryIdx: 1, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Portal Pengaduan", code: "APP-DITPP-003", description: "Portal pengaduan masyarakat", owner: "Seksi Pengaduan", categoryIdx: 1, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Gedung Pelayanan Terpadu", code: "GDG-DITPP-001", description: "Gedung MPP Direktorat", owner: "Subbag Umum", categoryIdx: 2, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Loket Pelayanan", code: "GDG-DITPP-002", description: "Area loket pelayanan", owner: "Subbag Umum", categoryIdx: 2, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Database Layanan", code: "DATA-DITPP-001", description: "Database transaksi layanan", owner: "Seksi TIK", categoryIdx: 3, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Data Pengaduan", code: "DATA-DITPP-002", description: "Data pengaduan masyarakat", owner: "Seksi Pengaduan", categoryIdx: 3, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Tim Customer Service", code: "SDM-DITPP-001", description: "Tim pelayanan pelanggan", owner: "Seksi Layanan", categoryIdx: 4, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Mobil Operasional", code: "KND-DITPP-001", description: "Kendaraan operasional", owner: "Subbag Umum", categoryIdx: 5, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Komputer Loket 1-5", code: "PRK-DITPP-001", description: "Komputer untuk loket pelayanan", owner: "Seksi TIK", categoryIdx: 6, unitKerja: direktoratPelayananPublik, status: "ACTIVE" },
+    { name: "Mesin Antrian Lama", code: "PRK-DITPP-002", description: "Mesin antrian (tidak digunakan)", owner: "Subbag Umum", categoryIdx: 6, unitKerja: direktoratPelayananPublik, status: "ARCHIVED" },
   ];
 
-  for (const data of assetsData) {
-    const existingAsset = await prisma.asset.findUnique({
-      where: {
-        unitKerjaId_code: {
-          unitKerjaId: data.unitKerjaId,
-          code: data.code,
-        },
+  for (const asset of assetsData) {
+    await prisma.asset.create({
+      data: {
+        name: asset.name,
+        code: asset.code,
+        description: asset.description,
+        owner: asset.owner,
+        categoryId: assetCategories[asset.categoryIdx].id,
+        unitKerjaId: asset.unitKerja.id,
+        status: asset.status,
+        createdBy: adminUser.id,
       },
     });
-
-    if (!existingAsset) {
-      const asset = await prisma.asset.create({
-        data: {
-          ...data,
-          createdBy: adminUserId,
-        },
-      });
-      console.log(`   ✓ ${asset.name} (${asset.code})`);
-    } else {
-      console.log(`   ⚠ Asset ${data.code} sudah ada, skip...`);
-    }
+    console.log(`   ✓ ${asset.name} (${asset.code}) - ${asset.unitKerja.code}`);
   }
-  console.log("✅ Sample Assets berhasil di-seed\n");
+  console.log("✅ Assets berhasil di-seed\n");
+
+  // 7. Seed Risk Worksheets
+  console.log("📑 Seeding Risk Worksheets...");
+
+  // Worksheet ACTIVE - Direktorat Pelayanan Publik
+  const worksheetActive = await prisma.riskWorksheet.create({
+    data: {
+      name: "Kertas Kerja Risiko Q1 2024",
+      description: "Kertas kerja untuk identifikasi risiko kuartal 1 tahun 2024",
+      status: "ACTIVE",
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
+    },
+  });
+  console.log(`   ✓ ${worksheetActive.name} (ACTIVE) - Dit PP`);
+
+  // Worksheet INACTIVE - Direktorat Pelayanan Publik
+  const worksheetInactive = await prisma.riskWorksheet.create({
+    data: {
+      name: "Kertas Kerja Risiko Draft",
+      description: "Draft kertas kerja yang belum difinalisasi",
+      status: "INACTIVE",
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
+    },
+  });
+  console.log(`   ✓ ${worksheetInactive.name} (INACTIVE) - Dit PP`);
+
+  // Worksheet ARCHIVED - Direktorat Pelayanan Publik
+  const worksheetArchived = await prisma.riskWorksheet.create({
+    data: {
+      name: "Kertas Kerja Risiko 2023",
+      description: "Kertas kerja risiko tahun 2023 yang sudah diarsipkan",
+      status: "ARCHIVED",
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
+    },
+  });
+  console.log(`   ✓ ${worksheetArchived.name} (ARCHIVED) - Dit PP`);
+
+  // Worksheet milik pengelola risiko kedua (untuk testing ownership)
+  const worksheetOtherOwner = await prisma.riskWorksheet.create({
+    data: {
+      name: "Kertas Kerja Risiko Layanan Online",
+      description: "Kertas kerja khusus untuk risiko layanan online",
+      status: "INACTIVE",
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP2.id,
+    },
+  });
+  console.log(`   ✓ ${worksheetOtherOwner.name} (INACTIVE, owner: ${pengelolaRisikoDitPP2.name}) - Dit PP`);
+
+  console.log("✅ Risk Worksheets berhasil di-seed\n");
 
   // Summary
   console.log("📊 Summary:");
@@ -626,42 +544,45 @@ async function main() {
   const totalUnitKerja = await prisma.unitKerja.count();
   const totalUsers = await prisma.user.count();
   const totalProfiles = await prisma.profile.count();
-  const totalVerifiedProfiles = await prisma.profile.count({ where: { isVerified: true } });
-  const totalUnverifiedProfiles = await prisma.profile.count({ where: { isVerified: false } });
-  const totalProfileRequests = await prisma.profileChangeRequest.count();
-  const totalPendingRequests = await prisma.profileChangeRequest.count({ where: { status: "PENDING" } });
-  const totalApprovedRequests = await prisma.profileChangeRequest.count({ where: { status: "APPROVED" } });
-  const totalRejectedRequests = await prisma.profileChangeRequest.count({ where: { status: "REJECTED" } });
+  const totalKonteks = await prisma.konteks.count();
+  const totalRiskCategories = await prisma.riskCategory.count();
+  const totalLikelihoodScales = await prisma.likelihoodScale.count();
+  const totalImpactScales = await prisma.impactScale.count();
+  const totalRiskMatrices = await prisma.riskMatrix.count();
   const totalAssetCategories = await prisma.assetCategory.count();
   const totalAssets = await prisma.asset.count();
+  const totalWorksheets = await prisma.riskWorksheet.count();
 
   console.log(`   • Total Roles: ${totalRoles}`);
   console.log(`   • Total Unit Kerja: ${totalUnitKerja}`);
   console.log(`   • Total Users: ${totalUsers}`);
   console.log(`   • Total Profiles: ${totalProfiles}`);
-  console.log(`     - Verified: ${totalVerifiedProfiles}`);
-  console.log(`     - Unverified: ${totalUnverifiedProfiles}`);
-  console.log(`   • Total Profile Requests: ${totalProfileRequests}`);
-  console.log(`     - Pending: ${totalPendingRequests}`);
-  console.log(`     - Approved: ${totalApprovedRequests}`);
-  console.log(`     - Rejected: ${totalRejectedRequests}`);
+  console.log(`   • Total Konteks: ${totalKonteks}`);
+  console.log(`   • Total Risk Categories: ${totalRiskCategories}`);
+  console.log(`   • Total Likelihood Scales: ${totalLikelihoodScales}`);
+  console.log(`   • Total Impact Scales: ${totalImpactScales}`);
+  console.log(`   • Total Risk Matrices: ${totalRiskMatrices}`);
   console.log(`   • Total Asset Categories: ${totalAssetCategories}`);
   console.log(`   • Total Assets: ${totalAssets}`);
+  console.log(`   • Total Risk Worksheets: ${totalWorksheets}`);
 
   console.log("\n✅ Seeding selesai!");
   console.log("\n📝 Credentials untuk testing:");
-  console.log("   • Username: admin | Password: password123 (ADMINISTRATOR)");
-  console.log("   • Username: komite.pusat | Password: password123 (KOMITE_PUSAT)");
-  console.log("   • Username: pengelola.risiko | Password: password123 (PENGELOLA_RISIKO_UKER - IT)");
-  console.log("   • Username: john.doe | Password: password123 (USER - Verified)");
-  console.log("   • Username: jane.smith | Password: password123 (USER - Verified)");
-  console.log("   • Username: bob.wilson | Password: password123 (USER - Verified)");
-  console.log("   • Username: alice.brown | Password: password123 (USER - Verified)");
-  console.log("   • Username: charlie.davis | Password: password123 (USER - Unverified, has PENDING request)");
-  console.log("   • Username: diana.miller | Password: password123 (USER - Unverified, has PENDING request)");
-  console.log("   • Username: evan.thomas | Password: password123 (USER - Unverified, has PENDING request)");
-  console.log("   • Username: fiona.garcia | Password: password123 (USER - Unverified, has REJECTED request)");
-  console.log("   • Username: george.lee | Password: password123 (USER - Verified, has PENDING change request)");
+  console.log("   Semua password: password123");
+  console.log("");
+  console.log("   SEKRETARIAT JENDERAL:");
+  console.log("   • admin (ADMINISTRATOR)");
+  console.log("   • komite.setjen (KOMITE_PUSAT)");
+  console.log("");
+  console.log("   DIREKTORAT PELAYANAN PUBLIK:");
+  console.log("   • komite.ditpp (KOMITE_PUSAT)");
+  console.log("   • pengelola.ditpp (PENGELOLA_RISIKO_UKER) - owner worksheets");
+  console.log("   • pengelola2.ditpp (PENGELOLA_RISIKO_UKER) - second user same unit");
+  console.log("");
+  console.log("   LAINNYA:");
+  console.log("   • user.inactive (USER - INACTIVE, tidak bisa login)");
+  console.log("   • user.noprofile (USER - tanpa profile)");
+  console.log("   • user.unverified (USER - profile belum diverifikasi)");
 }
 
 main()
