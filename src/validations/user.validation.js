@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { ROLES } from "../config/constant.js";
 
 const registedNewUserSchema = Joi.object({
   username: Joi.string()
@@ -68,9 +69,11 @@ const searchUserSchema = Joi.object({
     "string.max": "Username maksimal 255 karakter",
   }),
 
-  role: Joi.string().valid("USER", "ADMINISTRATOR", "KOMITE_PUSAT").messages({
-    "any.only": "Role harus salah satu dari: USER, ADMINISTRATOR, KOMITE_PUSAT",
-  }),
+  role: Joi.string()
+    .valid(...Object.values(ROLES))
+    .messages({
+      "any.only": `Role harus salah satu dari: ${Object.values(ROLES).join(", ")}`,
+    }),
 
   isActive: Joi.boolean().messages({
     "boolean.base": "isActive harus berupa boolean (true/false)",
@@ -165,15 +168,14 @@ const updateUserByAdminSchema = Joi.object({
   }),
 
   roles: Joi.array()
-    .items(Joi.string().valid("USER", "ADMINISTRATOR", "KOMITE_PUSAT"))
+    .items(Joi.string().valid(...Object.values(ROLES)))
     .min(1)
     .unique()
     .messages({
       "array.base": "Roles harus berupa array",
       "array.min": "Minimal harus ada 1 role",
       "array.unique": "Roles tidak boleh duplikat",
-      "any.only":
-        "Role harus salah satu dari: USER, ADMINISTRATOR, KOMITE_PUSAT",
+      "any.only": `Role harus salah satu dari: ${Object.values(ROLES).join(", ")}`,
     }),
 })
   .min(1)
