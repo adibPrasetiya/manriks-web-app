@@ -10,6 +10,8 @@ import { likelihoodScaleRoutes } from "./likelihood-scale.route.js";
 import { impactScaleRoutes } from "./impact-scale.route.js";
 import { riskMatrixRoutes } from "./risk-matrix.route.js";
 import { sessionRoutes } from "./session.route.js";
+import { assetCategoryRoutes } from "./asset-category.route.js";
+import { assetRoutes } from "./asset.route.js";
 
 export const protectedRoute = Router();
 
@@ -24,6 +26,8 @@ const routes = [
   ...likelihoodScaleRoutes,
   ...impactScaleRoutes,
   ...riskMatrixRoutes,
+  ...assetCategoryRoutes,
+  ...assetRoutes,
 ];
 
 routes.forEach(({ method, path, handler, roles }) => {

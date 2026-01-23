@@ -34,6 +34,15 @@ async function main() {
       description: "Role untuk Komite Pusat yang dapat mengelola konteks manajemen risiko",
     },
   });
+
+  const rolePengelolaRisikoUker = await prisma.role.upsert({
+    where: { name: "PENGELOLA_RISIKO_UKER" },
+    update: {},
+    create: {
+      name: "PENGELOLA_RISIKO_UKER",
+      description: "Role untuk Pengelola Risiko Unit Kerja yang dapat mengelola aset di unit kerjanya",
+    },
+  });
   console.log("✅ Roles berhasil di-seed\n");
 
   // Store admin user id for verification references
@@ -442,6 +451,175 @@ async function main() {
 
   console.log("✅ Profile Change Requests berhasil di-seed\n");
 
+  // 5. Seed Asset Categories
+  console.log("📦 Seeding Asset Categories...");
+  const assetCategoriesData = [
+    {
+      name: "Perangkat Keras",
+      description: "Aset berupa perangkat keras seperti komputer, server, dan peralatan jaringan",
+    },
+    {
+      name: "Perangkat Lunak",
+      description: "Aset berupa aplikasi, sistem operasi, dan lisensi software",
+    },
+    {
+      name: "Infrastruktur",
+      description: "Aset berupa gedung, ruangan, dan fasilitas fisik",
+    },
+    {
+      name: "Data & Informasi",
+      description: "Aset berupa data pelanggan, dokumen penting, dan informasi bisnis",
+    },
+    {
+      name: "Sumber Daya Manusia",
+      description: "Aset berupa pengetahuan dan keterampilan karyawan",
+    },
+  ];
+
+  const assetCategories = [];
+  for (const data of assetCategoriesData) {
+    const category = await prisma.assetCategory.upsert({
+      where: { name: data.name },
+      update: {},
+      create: data,
+    });
+    assetCategories.push(category);
+    console.log(`   ✓ ${data.name}`);
+  }
+  console.log("✅ Asset Categories berhasil di-seed\n");
+
+  // 6. Seed Pengelola Risiko User
+  console.log("👤 Seeding Pengelola Risiko User...");
+  const pengelolaRisikoData = {
+    username: "pengelola.risiko",
+    name: "Pengelola Risiko IT",
+    email: "pengelola.risiko@company.com",
+    password: hashedPassword,
+    isActive: true,
+    isVerified: true,
+    roleId: rolePengelolaRisikoUker.id,
+    profile: {
+      jabatan: "Risk Officer",
+      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+      nomorHP: "081234567900",
+      isVerified: true,
+      verifiedAt: verifiedAt,
+    },
+  };
+
+  const existingPengelolaRisiko = await prisma.user.findUnique({
+    where: { email: pengelolaRisikoData.email },
+  });
+
+  if (!existingPengelolaRisiko) {
+    const { roleId, profile, ...userCreateData } = pengelolaRisikoData;
+    const pengelolaRisiko = await prisma.user.create({
+      data: {
+        ...userCreateData,
+        profile: {
+          create: {
+            ...profile,
+            verifiedBy: adminUserId,
+          },
+        },
+        userRoles: {
+          create: {
+            roleId: roleId,
+          },
+        },
+      },
+      include: {
+        profile: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+    createdUsers[pengelolaRisiko.username] = pengelolaRisiko;
+    console.log(
+      `   ✓ ${pengelolaRisiko.name} (${pengelolaRisiko.email}) - ${pengelolaRisiko.userRoles[0].role.name}`
+    );
+  } else {
+    console.log(`   ⚠ User ${pengelolaRisikoData.email} sudah ada, skip...`);
+  }
+  console.log("✅ Pengelola Risiko User berhasil di-seed\n");
+
+  // 7. Seed Sample Assets
+  console.log("💼 Seeding Sample Assets...");
+  const assetsData = [
+    {
+      name: "Server Utama Data Center",
+      code: "SRV-001",
+      description: "Server utama untuk data center",
+      owner: "Tim Infrastructure",
+      categoryId: assetCategories[0].id, // Perangkat Keras
+      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+      status: "ACTIVE",
+    },
+    {
+      name: "Aplikasi ERP",
+      code: "APP-001",
+      description: "Sistem ERP perusahaan",
+      owner: "Tim Development",
+      categoryId: assetCategories[1].id, // Perangkat Lunak
+      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+      status: "ACTIVE",
+    },
+    {
+      name: "Database Pelanggan",
+      code: "DATA-001",
+      description: "Database informasi pelanggan",
+      owner: "Tim Data",
+      categoryId: assetCategories[3].id, // Data & Informasi
+      unitKerjaId: unitKerjaRecords[1].id, // Keuangan & Akuntansi
+      status: "ACTIVE",
+    },
+    {
+      name: "Gedung Kantor Pusat",
+      code: "INFRA-001",
+      description: "Gedung kantor pusat perusahaan",
+      owner: "Facilities Management",
+      categoryId: assetCategories[2].id, // Infrastruktur
+      unitKerjaId: unitKerjaRecords[2].id, // SDM & Umum
+      status: "ACTIVE",
+    },
+    {
+      name: "Server Backup",
+      code: "SRV-002",
+      description: "Server untuk backup data",
+      owner: "Tim Infrastructure",
+      categoryId: assetCategories[0].id, // Perangkat Keras
+      unitKerjaId: unitKerjaRecords[0].id, // IT & Teknologi
+      status: "INACTIVE",
+    },
+  ];
+
+  for (const data of assetsData) {
+    const existingAsset = await prisma.asset.findUnique({
+      where: {
+        unitKerjaId_code: {
+          unitKerjaId: data.unitKerjaId,
+          code: data.code,
+        },
+      },
+    });
+
+    if (!existingAsset) {
+      const asset = await prisma.asset.create({
+        data: {
+          ...data,
+          createdBy: adminUserId,
+        },
+      });
+      console.log(`   ✓ ${asset.name} (${asset.code})`);
+    } else {
+      console.log(`   ⚠ Asset ${data.code} sudah ada, skip...`);
+    }
+  }
+  console.log("✅ Sample Assets berhasil di-seed\n");
+
   // Summary
   console.log("📊 Summary:");
   const totalRoles = await prisma.role.count();
@@ -454,6 +632,8 @@ async function main() {
   const totalPendingRequests = await prisma.profileChangeRequest.count({ where: { status: "PENDING" } });
   const totalApprovedRequests = await prisma.profileChangeRequest.count({ where: { status: "APPROVED" } });
   const totalRejectedRequests = await prisma.profileChangeRequest.count({ where: { status: "REJECTED" } });
+  const totalAssetCategories = await prisma.assetCategory.count();
+  const totalAssets = await prisma.asset.count();
 
   console.log(`   • Total Roles: ${totalRoles}`);
   console.log(`   • Total Unit Kerja: ${totalUnitKerja}`);
@@ -465,11 +645,14 @@ async function main() {
   console.log(`     - Pending: ${totalPendingRequests}`);
   console.log(`     - Approved: ${totalApprovedRequests}`);
   console.log(`     - Rejected: ${totalRejectedRequests}`);
+  console.log(`   • Total Asset Categories: ${totalAssetCategories}`);
+  console.log(`   • Total Assets: ${totalAssets}`);
 
   console.log("\n✅ Seeding selesai!");
   console.log("\n📝 Credentials untuk testing:");
   console.log("   • Username: admin | Password: password123 (ADMINISTRATOR)");
   console.log("   • Username: komite.pusat | Password: password123 (KOMITE_PUSAT)");
+  console.log("   • Username: pengelola.risiko | Password: password123 (PENGELOLA_RISIKO_UKER - IT)");
   console.log("   • Username: john.doe | Password: password123 (USER - Verified)");
   console.log("   • Username: jane.smith | Password: password123 (USER - Verified)");
   console.log("   • Username: bob.wilson | Password: password123 (USER - Verified)");

@@ -80,6 +80,7 @@ model UnitKerja {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   profiles  Profile[]
+  assets    Asset[]
 
   // Relations for change requests
   profileChangeRequests ProfileChangeRequest[]
@@ -118,6 +119,13 @@ enum RoleName {
   USER
   ADMINISTRATOR
   KOMITE_PUSAT
+  PENGELOLA_RISIKO_UKER
+}
+
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
 }
 
 enum ProfileRequestType {
@@ -268,4 +276,40 @@ model RiskMatrix {
   @@index([konteksId])
   @@index([konteksId, riskLevel])
   @@map("risk_matrices")
+}
+
+model AssetCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assets      Asset[]
+
+  @@map("asset_categories")
+}
+
+model Asset {
+  id          String        @id @default(cuid())
+  unitKerjaId String
+  unitKerja   UnitKerja     @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
+  categoryId  String
+  category    AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  name        String        @db.VarChar(255)
+  code        String        @db.VarChar(100)
+  description String?       @db.Text
+  owner       String?       @db.VarChar(255)
+  status      AssetStatus   @default(ACTIVE)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdBy   String?
+  updatedBy   String?
+
+  @@unique([unitKerjaId, code])
+  @@index([unitKerjaId])
+  @@index([categoryId])
+  @@index([status])
+  @@map("assets")
 }
