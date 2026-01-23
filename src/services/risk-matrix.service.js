@@ -1,6 +1,7 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
+import { checkKonteksNotActive } from "../utils/konteks.utils.js";
 import {
   createRiskMatrixSchema,
   bulkCreateRiskMatrixSchema,
@@ -27,6 +28,9 @@ const create = async (konteksId, reqBody) => {
   if (!konteks) {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
+
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "matriks risiko");
 
   // Check unique constraint (konteksId, likelihoodLevel, impactLevel)
   const existingMatrix = await prismaClient.riskMatrix.findFirst({
@@ -96,6 +100,9 @@ const bulkCreate = async (konteksId, reqBody) => {
   if (!konteks) {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
+
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "matriks risiko");
 
   const matrixSize = konteks.matrixSize;
 
@@ -326,6 +333,9 @@ const update = async (konteksId, id, reqBody) => {
     throw new ResponseError(404, "Matriks risiko tidak ditemukan.");
   }
 
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "matriks risiko");
+
   // If updating levels, check uniqueness
   const newLikelihood = reqBody.likelihoodLevel || existingMatrix.likelihoodLevel;
   const newImpact = reqBody.impactLevel || existingMatrix.impactLevel;
@@ -402,6 +412,9 @@ const remove = async (konteksId, id) => {
   if (existingMatrix.konteksId !== validatedKonteksId) {
     throw new ResponseError(404, "Matriks risiko tidak ditemukan.");
   }
+
+  // Check if konteks is active - prevent deletion
+  await checkKonteksNotActive(validatedKonteksId, "matriks risiko");
 
   // Delete risk matrix
   await prismaClient.riskMatrix.delete({

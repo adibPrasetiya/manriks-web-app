@@ -1,6 +1,7 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
+import { checkKonteksNotActive } from "../utils/konteks.utils.js";
 import {
   createLikelihoodScaleSchema,
   updateLikelihoodScaleSchema,
@@ -44,6 +45,9 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
       "Kategori risiko tidak ditemukan dalam konteks ini."
     );
   }
+
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "skala kemungkinan");
 
   const matrixSize = riskCategory.konteks.matrixSize;
 
@@ -316,6 +320,9 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     );
   }
 
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "skala kemungkinan");
+
   const matrixSize = riskCategory.konteks.matrixSize;
 
   // Validate level is within matrixSize range if being updated
@@ -421,6 +428,9 @@ const remove = async (konteksId, riskCategoryId, id) => {
       "Kategori risiko tidak ditemukan dalam konteks ini."
     );
   }
+
+  // Check if konteks is active - prevent deletion
+  await checkKonteksNotActive(validatedKonteksId, "skala kemungkinan");
 
   // Check if likelihood scale exists
   const existingScale = await prismaClient.likelihoodScale.findUnique({

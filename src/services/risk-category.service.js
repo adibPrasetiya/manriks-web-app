@@ -1,6 +1,7 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
+import { checkKonteksNotActive } from "../utils/konteks.utils.js";
 import {
   createRiskCategorySchema,
   updateRiskCategorySchema,
@@ -26,6 +27,9 @@ const create = async (konteksId, reqBody) => {
   if (!konteks) {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
+
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "kategori risiko");
 
   // Check name uniqueness per konteks
   const existingCategory = await prismaClient.riskCategory.findFirst({
@@ -222,6 +226,9 @@ const update = async (konteksId, id, reqBody) => {
     throw new ResponseError(404, "Kategori risiko tidak ditemukan.");
   }
 
+  // Check if konteks is active - prevent modification
+  await checkKonteksNotActive(validatedKonteksId, "kategori risiko");
+
   // If name is being updated, check uniqueness per konteks
   if (reqBody.name && reqBody.name !== existingCategory.name) {
     const nameExists = await prismaClient.riskCategory.findFirst({
@@ -306,6 +313,9 @@ const remove = async (konteksId, id) => {
   if (existingCategory.konteksId !== validatedKonteksId) {
     throw new ResponseError(404, "Kategori risiko tidak ditemukan.");
   }
+
+  // Check if konteks is active - prevent deletion
+  await checkKonteksNotActive(validatedKonteksId, "kategori risiko");
 
   // Check referential integrity
   // NOTE: Based on current schema, there are no foreign key references to RiskCategory

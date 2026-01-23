@@ -23,33 +23,6 @@ const create = async (reqBody, userId) => {
     );
   }
 
-  // Check period overlap (optional business rule)
-  const overlappingKonteks = await prismaClient.konteks.findFirst({
-    where: {
-      OR: [
-        {
-          AND: [
-            { periodStart: { lte: reqBody.periodStart } },
-            { periodEnd: { gte: reqBody.periodStart } },
-          ],
-        },
-        {
-          AND: [
-            { periodStart: { lte: reqBody.periodEnd } },
-            { periodEnd: { gte: reqBody.periodEnd } },
-          ],
-        },
-      ],
-    },
-  });
-
-  if (overlappingKonteks) {
-    throw new ResponseError(
-      409,
-      `Periode konteks bertumpukan dengan konteks ${overlappingKonteks.name} (${overlappingKonteks.periodStart}-${overlappingKonteks.periodEnd}).`
-    );
-  }
-
   // Create konteks only - no nested entities
   const konteks = await prismaClient.konteks.create({
     data: {
@@ -215,6 +188,14 @@ const update = async (konteksId, reqBody, userId) => {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
 
+  // Check if konteks is active - prevent editing active konteks
+  if (existingKonteks.isActive) {
+    throw new ResponseError(
+      403,
+      "Tidak dapat mengubah konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu."
+    );
+  }
+
   // Check if matrixSize is being updated and validate
   if (reqBody.matrixSize && reqBody.matrixSize !== existingKonteks.matrixSize) {
     // Check if there are any scales created
@@ -238,39 +219,6 @@ const update = async (konteksId, reqBody, userId) => {
       throw new ResponseError(
         400,
         "Ukuran matriks tidak dapat diubah karena sudah ada likelihood scale atau impact scale yang dibuat."
-      );
-    }
-  }
-
-  // Check period overlap if period is being updated
-  if (reqBody.periodStart || reqBody.periodEnd) {
-    const newPeriodStart = reqBody.periodStart || existingKonteks.periodStart;
-    const newPeriodEnd = reqBody.periodEnd || existingKonteks.periodEnd;
-
-    const overlappingKonteks = await prismaClient.konteks.findFirst({
-      where: {
-        id: { not: id },
-        OR: [
-          {
-            AND: [
-              { periodStart: { lte: newPeriodStart } },
-              { periodEnd: { gte: newPeriodStart } },
-            ],
-          },
-          {
-            AND: [
-              { periodStart: { lte: newPeriodEnd } },
-              { periodEnd: { gte: newPeriodEnd } },
-            ],
-          },
-        ],
-      },
-    });
-
-    if (overlappingKonteks) {
-      throw new ResponseError(
-        409,
-        `Periode konteks bertumpukan dengan konteks ${overlappingKonteks.name}.`
       );
     }
   }
