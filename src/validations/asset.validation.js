@@ -74,12 +74,6 @@ const updateAssetSchema = Joi.object({
   owner: Joi.string().max(255).allow("", null).messages({
     "string.max": "Owner maksimal 255 karakter",
   }),
-
-  status: Joi.string()
-    .valid(...Object.values(ASSET_STATUSES))
-    .messages({
-      "any.only": `Status harus salah satu dari: ${Object.values(ASSET_STATUSES).join(", ")}`,
-    }),
 }).min(1);
 
 const searchAssetSchema = Joi.object({

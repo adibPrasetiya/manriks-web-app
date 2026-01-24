@@ -27,9 +27,21 @@ export const assetRoutes = [
     roles: [ROLES.ADMINISTRATOR, ROLES.PENGELOLA_RISIKO_UKER],
   },
   {
+    method: "patch",
+    path: "/unit-kerja/:unitKerjaId/assets/:id/activate",
+    handler: assetController.setActive,
+    roles: [ROLES.ADMINISTRATOR, ROLES.PENGELOLA_RISIKO_UKER],
+  },
+  {
+    method: "patch",
+    path: "/unit-kerja/:unitKerjaId/assets/:id/deactivate",
+    handler: assetController.setInactive,
+    roles: [ROLES.ADMINISTRATOR, ROLES.PENGELOLA_RISIKO_UKER],
+  },
+  {
     method: "delete",
     path: "/unit-kerja/:unitKerjaId/assets/:id",
-    handler: assetController.remove,
+    handler: assetController.archive,
     roles: [ROLES.ADMINISTRATOR, ROLES.PENGELOLA_RISIKO_UKER],
   },
 ];

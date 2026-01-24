@@ -1,7 +1,7 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
-import { ROLES } from "../config/constant.js";
+import { ROLES, ASSET_STATUSES } from "../config/constant.js";
 import {
   createAssetSchema,
   updateAssetSchema,
@@ -370,7 +370,31 @@ const update = async (unitKerjaId, id, reqBody, user) => {
   };
 };
 
-const remove = async (unitKerjaId, id, user) => {
+const assetSelect = {
+  id: true,
+  name: true,
+  code: true,
+  description: true,
+  owner: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  unitKerja: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+};
+
+const setActive = async (unitKerjaId, id, user) => {
   // Validate unit kerja ID
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -397,16 +421,125 @@ const remove = async (unitKerjaId, id, user) => {
     throw new ResponseError(404, "Aset tidak ditemukan.");
   }
 
-  // Delete asset (hard delete)
-  await prismaClient.asset.delete({
+  // Check if already active
+  if (existingAsset.status === ASSET_STATUSES.ACTIVE) {
+    throw new ResponseError(400, "Aset sudah dalam status aktif.");
+  }
+
+  // Can't activate if ARCHIVED
+  if (existingAsset.status === ASSET_STATUSES.ARCHIVED) {
+    throw new ResponseError(
+      400,
+      "Tidak dapat mengaktifkan aset yang sudah diarsipkan."
+    );
+  }
+
+  const updatedAsset = await prismaClient.asset.update({
+    where: { id: idParams.id },
+    data: { status: ASSET_STATUSES.ACTIVE, updatedBy: user.id },
+    select: assetSelect,
+  });
+
+  return { message: "Aset berhasil diaktifkan", data: updatedAsset };
+};
+
+const setInactive = async (unitKerjaId, id, user) => {
+  // Validate unit kerja ID
+  const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
+  unitKerjaId = unitKerjaParams.unitKerjaId;
+
+  // Check access
+  checkUnitKerjaAccess(user, unitKerjaId);
+
+  // Validate asset ID
+  const idParams = validate(assetIdSchema, { id });
+
+  // Check if asset exists
+  const existingAsset = await prismaClient.asset.findUnique({
     where: {
       id: idParams.id,
     },
   });
 
-  return {
-    message: "Aset berhasil dihapus",
-  };
+  if (!existingAsset) {
+    throw new ResponseError(404, "Aset tidak ditemukan.");
+  }
+
+  // Verify asset belongs to the specified unit kerja
+  if (existingAsset.unitKerjaId !== unitKerjaId) {
+    throw new ResponseError(404, "Aset tidak ditemukan.");
+  }
+
+  // Check if already inactive
+  if (existingAsset.status === ASSET_STATUSES.INACTIVE) {
+    throw new ResponseError(400, "Aset sudah dalam status tidak aktif.");
+  }
+
+  // Can't deactivate if ARCHIVED
+  if (existingAsset.status === ASSET_STATUSES.ARCHIVED) {
+    throw new ResponseError(
+      400,
+      "Tidak dapat menonaktifkan aset yang sudah diarsipkan."
+    );
+  }
+
+  const updatedAsset = await prismaClient.asset.update({
+    where: { id: idParams.id },
+    data: { status: ASSET_STATUSES.INACTIVE, updatedBy: user.id },
+    select: assetSelect,
+  });
+
+  return { message: "Aset berhasil dinonaktifkan", data: updatedAsset };
+};
+
+const archive = async (unitKerjaId, id, user) => {
+  // Validate unit kerja ID
+  const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
+  unitKerjaId = unitKerjaParams.unitKerjaId;
+
+  // Check access
+  checkUnitKerjaAccess(user, unitKerjaId);
+
+  // Validate asset ID
+  const idParams = validate(assetIdSchema, { id });
+
+  // Check if asset exists
+  const existingAsset = await prismaClient.asset.findUnique({
+    where: {
+      id: idParams.id,
+    },
+  });
+
+  if (!existingAsset) {
+    throw new ResponseError(404, "Aset tidak ditemukan.");
+  }
+
+  // Verify asset belongs to the specified unit kerja
+  if (existingAsset.unitKerjaId !== unitKerjaId) {
+    throw new ResponseError(404, "Aset tidak ditemukan.");
+  }
+
+  // Check if already archived
+  if (existingAsset.status === ASSET_STATUSES.ARCHIVED) {
+    throw new ResponseError(400, "Aset sudah diarsipkan.");
+  }
+
+  // Can't archive if ACTIVE (must deactivate first)
+  if (existingAsset.status === ASSET_STATUSES.ACTIVE) {
+    throw new ResponseError(
+      400,
+      "Tidak dapat mengarsipkan aset yang masih aktif. Nonaktifkan terlebih dahulu."
+    );
+  }
+
+  // Soft delete - update status to ARCHIVED
+  const archivedAsset = await prismaClient.asset.update({
+    where: { id: idParams.id },
+    data: { status: ASSET_STATUSES.ARCHIVED, updatedBy: user.id },
+    select: assetSelect,
+  });
+
+  return { message: "Aset berhasil diarsipkan", data: archivedAsset };
 };
 
 export default {
@@ -414,5 +547,7 @@ export default {
   search,
   getById,
   update,
-  remove,
+  setActive,
+  setInactive,
+  archive,
 };

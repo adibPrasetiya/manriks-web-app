@@ -78,9 +78,9 @@ const update = async (req, res, next) => {
   }
 };
 
-const remove = async (req, res, next) => {
+const setActive = async (req, res, next) => {
   try {
-    const result = await assetService.remove(
+    const result = await assetService.setActive(
       req.params.unitKerjaId,
       req.params.id,
       req.user
@@ -89,6 +89,45 @@ const remove = async (req, res, next) => {
       .status(200)
       .json({
         message: result.message,
+        data: result.data,
+      })
+      .end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+const setInactive = async (req, res, next) => {
+  try {
+    const result = await assetService.setInactive(
+      req.params.unitKerjaId,
+      req.params.id,
+      req.user
+    );
+    res
+      .status(200)
+      .json({
+        message: result.message,
+        data: result.data,
+      })
+      .end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+const archive = async (req, res, next) => {
+  try {
+    const result = await assetService.archive(
+      req.params.unitKerjaId,
+      req.params.id,
+      req.user
+    );
+    res
+      .status(200)
+      .json({
+        message: result.message,
+        data: result.data,
       })
       .end();
   } catch (error) {
@@ -101,5 +140,7 @@ export default {
   search,
   getById,
   update,
-  remove,
+  setActive,
+  setInactive,
+  archive,
 };
