@@ -178,6 +178,12 @@ model ProfileChangeRequest {
   @@map("profile_change_requests")
 }
 
+enum KonteksStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
 model Konteks {
   id           String   @id @default(cuid())
   name         String   @db.VarChar(255)
@@ -196,7 +202,7 @@ model Konteks {
   riskAppetiteDescription String?  @db.Text
 
   // Status
-  isActive     Boolean  @default(false) // Hanya 1 konteks yang bisa true
+  status       KonteksStatus  @default(INACTIVE)
 
   // Timestamps
   createdAt    DateTime @default(now())
@@ -210,7 +216,7 @@ model Konteks {
   riskWorksheets   RiskWorksheet[]
 
   @@index([code])
-  @@index([isActive])
+  @@index([status])
   @@index([periodStart, periodEnd])
   @@map("konteks")
 }

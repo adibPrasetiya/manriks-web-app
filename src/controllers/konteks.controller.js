@@ -99,13 +99,15 @@ const deactivate = async (req, res, next) => {
   }
 };
 
-const remove = async (req, res, next) => {
+const archive = async (req, res, next) => {
   try {
-    const result = await konteksService.remove(req.params.konteksId);
+    const userId = req.user.userId;
+    const result = await konteksService.archive(req.params.konteksId, userId);
     res
       .status(200)
       .json({
         message: result.message,
+        data: result.data,
       })
       .end();
   } catch (error) {
@@ -120,5 +122,5 @@ export default {
   update,
   setActive,
   deactivate,
-  remove,
+  archive,
 };

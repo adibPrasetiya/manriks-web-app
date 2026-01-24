@@ -254,7 +254,7 @@ async function main() {
   });
   console.log("✅ Users berhasil di-seed\n");
 
-  // 4. Seed Konteks (5x5 active, 3x3 inactive)
+  // 4. Seed Konteks (5x5 active, 3x3 inactive, 4x4 archived)
   console.log("📋 Seeding Konteks...");
 
   // Konteks 5x5 (ACTIVE)
@@ -268,7 +268,7 @@ async function main() {
       matrixSize: 5,
       riskAppetiteLevel: "MEDIUM",
       riskAppetiteDescription: "Organisasi bersedia menerima risiko dengan dampak medium untuk mencapai tujuan strategis",
-      isActive: true,
+      status: "ACTIVE",
       createdBy: komitePusatSetjen.id,
       updatedBy: komitePusatSetjen.id,
     },
@@ -342,15 +342,15 @@ async function main() {
   // Konteks 3x3 (INACTIVE)
   const konteks3x3 = await prisma.konteks.create({
     data: {
-      name: "Konteks Manajemen Risiko 2023",
-      code: "KMR-2023-3X3",
-      description: "Konteks manajemen risiko dengan matriks 3x3 untuk periode 2023 (draft)",
-      periodStart: 2023,
-      periodEnd: 2023,
+      name: "Konteks Manajemen Risiko 2026",
+      code: "KMR-2026-3X3",
+      description: "Konteks manajemen risiko dengan matriks 3x3 untuk periode 2026 (draft)",
+      periodStart: 2026,
+      periodEnd: 2026,
       matrixSize: 3,
       riskAppetiteLevel: "LOW",
       riskAppetiteDescription: "Organisasi memiliki toleransi risiko rendah",
-      isActive: false,
+      status: "INACTIVE",
       createdBy: komitePusatSetjen.id,
       updatedBy: komitePusatSetjen.id,
     },
@@ -412,6 +412,84 @@ async function main() {
     }
   }
   console.log(`   ✓ Risk Categories, Scales, dan Matrix untuk ${konteks3x3.name} berhasil dibuat`);
+
+  // Konteks 4x4 (ARCHIVED) - Konteks lama yang sudah diarsipkan
+  const konteks4x4Archived = await prisma.konteks.create({
+    data: {
+      name: "Konteks Manajemen Risiko 2022-2023",
+      code: "KMR-2022-4X4",
+      description: "Konteks manajemen risiko dengan matriks 4x4 untuk periode 2022-2023 (sudah diarsipkan)",
+      periodStart: 2022,
+      periodEnd: 2023,
+      matrixSize: 4,
+      riskAppetiteLevel: "MEDIUM",
+      riskAppetiteDescription: "Konteks yang sudah tidak digunakan lagi",
+      status: "ARCHIVED",
+      createdBy: komitePusatSetjen.id,
+      updatedBy: komitePusatSetjen.id,
+    },
+  });
+  console.log(`   ✓ ${konteks4x4Archived.name} (4x4, ARCHIVED)`);
+
+  // Risk Categories untuk 4x4 ARCHIVED
+  const riskCategories4x4 = [
+    { name: "Risiko Strategis Lama", description: "Risiko strategis konteks lama", order: 1 },
+    { name: "Risiko Operasional Lama", description: "Risiko operasional konteks lama", order: 2 },
+  ];
+
+  for (const cat of riskCategories4x4) {
+    const category = await prisma.riskCategory.create({
+      data: { ...cat, konteksId: konteks4x4Archived.id },
+    });
+
+    // Likelihood Scales (1-4)
+    const likelihoodLabels = [
+      { level: 1, label: "Sangat Rendah", description: "Kemungkinan sangat kecil" },
+      { level: 2, label: "Rendah", description: "Kemungkinan kecil" },
+      { level: 3, label: "Sedang", description: "Kemungkinan sedang" },
+      { level: 4, label: "Tinggi", description: "Kemungkinan tinggi" },
+    ];
+    for (const ls of likelihoodLabels) {
+      await prisma.likelihoodScale.create({
+        data: { ...ls, riskCategoryId: category.id },
+      });
+    }
+
+    // Impact Scales (1-4)
+    const impactLabels = [
+      { level: 1, label: "Sangat Rendah", description: "Dampak sangat kecil" },
+      { level: 2, label: "Rendah", description: "Dampak kecil" },
+      { level: 3, label: "Sedang", description: "Dampak sedang" },
+      { level: 4, label: "Tinggi", description: "Dampak besar" },
+    ];
+    for (const is of impactLabels) {
+      await prisma.impactScale.create({
+        data: { ...is, riskCategoryId: category.id },
+      });
+    }
+  }
+
+  // Risk Matrix 4x4
+  const riskLevels4x4 = {
+    "1-1": "LOW", "1-2": "LOW", "1-3": "MEDIUM", "1-4": "MEDIUM",
+    "2-1": "LOW", "2-2": "MEDIUM", "2-3": "MEDIUM", "2-4": "HIGH",
+    "3-1": "MEDIUM", "3-2": "MEDIUM", "3-3": "HIGH", "3-4": "HIGH",
+    "4-1": "MEDIUM", "4-2": "HIGH", "4-3": "HIGH", "4-4": "CRITICAL",
+  };
+  for (let l = 1; l <= 4; l++) {
+    for (let i = 1; i <= 4; i++) {
+      await prisma.riskMatrix.create({
+        data: {
+          konteksId: konteks4x4Archived.id,
+          likelihoodLevel: l,
+          impactLevel: i,
+          riskLevel: riskLevels4x4[`${l}-${i}`],
+        },
+      });
+    }
+  }
+  console.log(`   ✓ Risk Categories, Scales, dan Matrix untuk ${konteks4x4Archived.name} berhasil dibuat`);
+
   console.log("✅ Konteks berhasil di-seed\n");
 
   // 5. Seed Asset Categories
@@ -545,6 +623,9 @@ async function main() {
   const totalUsers = await prisma.user.count();
   const totalProfiles = await prisma.profile.count();
   const totalKonteks = await prisma.konteks.count();
+  const konteksActive = await prisma.konteks.count({ where: { status: "ACTIVE" } });
+  const konteksInactive = await prisma.konteks.count({ where: { status: "INACTIVE" } });
+  const konteksArchived = await prisma.konteks.count({ where: { status: "ARCHIVED" } });
   const totalRiskCategories = await prisma.riskCategory.count();
   const totalLikelihoodScales = await prisma.likelihoodScale.count();
   const totalImpactScales = await prisma.impactScale.count();
@@ -557,7 +638,7 @@ async function main() {
   console.log(`   • Total Unit Kerja: ${totalUnitKerja}`);
   console.log(`   • Total Users: ${totalUsers}`);
   console.log(`   • Total Profiles: ${totalProfiles}`);
-  console.log(`   • Total Konteks: ${totalKonteks}`);
+  console.log(`   • Total Konteks: ${totalKonteks} (ACTIVE: ${konteksActive}, INACTIVE: ${konteksInactive}, ARCHIVED: ${konteksArchived})`);
   console.log(`   • Total Risk Categories: ${totalRiskCategories}`);
   console.log(`   • Total Likelihood Scales: ${totalLikelihoodScales}`);
   console.log(`   • Total Impact Scales: ${totalImpactScales}`);
@@ -583,6 +664,11 @@ async function main() {
   console.log("   • user.inactive (USER - INACTIVE, tidak bisa login)");
   console.log("   • user.noprofile (USER - tanpa profile)");
   console.log("   • user.unverified (USER - profile belum diverifikasi)");
+  console.log("");
+  console.log("📋 Konteks Status:");
+  console.log("   • KMR-2024-5X5 (5x5) - ACTIVE - dapat digunakan untuk kertas kerja");
+  console.log("   • KMR-2026-3X3 (3x3) - INACTIVE - draft, bisa diedit");
+  console.log("   • KMR-2022-4X4 (4x4) - ARCHIVED - tidak bisa diubah lagi");
 }
 
 main()

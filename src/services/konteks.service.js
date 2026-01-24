@@ -7,6 +7,7 @@ import {
   searchKonteksSchema,
 } from "../validations/konteks.validation.js";
 import { ResponseError } from "../errors/response.error.js";
+import { KONTEKS_STATUSES } from "../config/constant.js";
 
 const create = async (reqBody, userId) => {
   reqBody = validate(createKonteksSchema, reqBody);
@@ -34,7 +35,7 @@ const create = async (reqBody, userId) => {
       matrixSize: reqBody.matrixSize,
       riskAppetiteLevel: reqBody.riskAppetiteLevel || null,
       riskAppetiteDescription: reqBody.riskAppetiteDescription || null,
-      isActive: reqBody.isActive || false,
+      status: KONTEKS_STATUSES.INACTIVE,
       createdBy: userId,
       updatedBy: userId,
     },
@@ -48,7 +49,7 @@ const create = async (reqBody, userId) => {
       matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
-      isActive: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,
@@ -64,7 +65,7 @@ const create = async (reqBody, userId) => {
 
 const search = async (queryParams) => {
   const params = validate(searchKonteksSchema, queryParams);
-  const { name, code, periodStart, periodEnd, isActive, page, limit } = params;
+  const { name, code, periodStart, periodEnd, status, page, limit } = params;
 
   const where = {};
 
@@ -84,8 +85,8 @@ const search = async (queryParams) => {
     where.periodEnd = { lte: periodEnd };
   }
 
-  if (isActive !== undefined) {
-    where.isActive = isActive;
+  if (status !== undefined) {
+    where.status = status;
   }
 
   const skip = (page - 1) * limit;
@@ -107,7 +108,7 @@ const search = async (queryParams) => {
       matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
-      isActive: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,
@@ -152,7 +153,7 @@ const getById = async (konteksId) => {
       matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
-      isActive: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,
@@ -189,10 +190,18 @@ const update = async (konteksId, reqBody, userId) => {
   }
 
   // Check if konteks is active - prevent editing active konteks
-  if (existingKonteks.isActive) {
+  if (existingKonteks.status === KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(
       403,
       "Tidak dapat mengubah konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu."
+    );
+  }
+
+  // Check if konteks is archived - prevent editing archived konteks
+  if (existingKonteks.status === KONTEKS_STATUSES.ARCHIVED) {
+    throw new ResponseError(
+      400,
+      "Tidak dapat mengubah konteks yang sudah diarsipkan."
     );
   }
 
@@ -239,7 +248,7 @@ const update = async (konteksId, reqBody, userId) => {
       matrixSize: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
-      isActive: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,
@@ -274,8 +283,15 @@ const setActive = async (konteksId, userId) => {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
 
-  if (konteks.isActive) {
+  if (konteks.status === KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(400, "Konteks ini sudah aktif.");
+  }
+
+  if (konteks.status === KONTEKS_STATUSES.ARCHIVED) {
+    throw new ResponseError(
+      400,
+      "Tidak dapat mengaktifkan konteks yang sudah diarsipkan."
+    );
   }
 
   // Validate: at least 1 risk category
@@ -311,15 +327,15 @@ const setActive = async (konteksId, userId) => {
     );
   }
 
-  // Use transaction: deactivate all, then activate the selected one
+  // Use transaction: deactivate all active konteks, then activate the selected one
   await prismaClient.$transaction([
     prismaClient.konteks.updateMany({
-      where: { isActive: true },
-      data: { isActive: false, updatedBy: userId },
+      where: { status: KONTEKS_STATUSES.ACTIVE },
+      data: { status: KONTEKS_STATUSES.INACTIVE, updatedBy: userId },
     }),
     prismaClient.konteks.update({
       where: { id },
-      data: { isActive: true, updatedBy: userId },
+      data: { status: KONTEKS_STATUSES.ACTIVE, updatedBy: userId },
     }),
   ]);
 
@@ -333,7 +349,7 @@ const setActive = async (konteksId, userId) => {
       periodStart: true,
       periodEnd: true,
       matrixSize: true,
-      isActive: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -356,14 +372,21 @@ const deactivate = async (konteksId, userId) => {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
 
-  if (!konteks.isActive) {
+  if (konteks.status === KONTEKS_STATUSES.INACTIVE) {
     throw new ResponseError(400, "Konteks ini sudah tidak aktif.");
+  }
+
+  if (konteks.status === KONTEKS_STATUSES.ARCHIVED) {
+    throw new ResponseError(
+      400,
+      "Tidak dapat menonaktifkan konteks yang sudah diarsipkan."
+    );
   }
 
   // Simply deactivate this konteks (no mutual exclusion like setActive)
   const deactivatedKonteks = await prismaClient.konteks.update({
     where: { id },
-    data: { isActive: false, updatedBy: userId },
+    data: { status: KONTEKS_STATUSES.INACTIVE, updatedBy: userId },
     select: {
       id: true,
       name: true,
@@ -371,7 +394,7 @@ const deactivate = async (konteksId, userId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
-      isActive: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -383,7 +406,7 @@ const deactivate = async (konteksId, userId) => {
   };
 };
 
-const remove = async (konteksId) => {
+const archive = async (konteksId, userId) => {
   const { konteksId: id } = validate(konteksIdSchema, { konteksId });
 
   const konteks = await prismaClient.konteks.findUnique({
@@ -394,19 +417,37 @@ const remove = async (konteksId) => {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
 
-  if (konteks.isActive) {
+  if (konteks.status === KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(
       400,
-      "Tidak dapat menghapus konteks yang sedang aktif. Aktifkan konteks lain terlebih dahulu."
+      "Tidak dapat mengarsipkan konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu."
     );
   }
 
-  await prismaClient.konteks.delete({
+  if (konteks.status === KONTEKS_STATUSES.ARCHIVED) {
+    throw new ResponseError(400, "Konteks ini sudah diarsipkan.");
+  }
+
+  // Soft delete - update status to ARCHIVED
+  const archivedKonteks = await prismaClient.konteks.update({
     where: { id },
+    data: { status: KONTEKS_STATUSES.ARCHIVED, updatedBy: userId },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   return {
-    message: "Konteks berhasil dihapus",
+    message: "Konteks berhasil diarsipkan",
+    data: archivedKonteks,
   };
 };
 
@@ -417,5 +458,5 @@ export default {
   update,
   setActive,
   deactivate,
-  remove,
+  archive,
 };

@@ -1,6 +1,6 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
-import { RISK_WORKSHEET_STATUSES } from "../config/constant.js";
+import { RISK_WORKSHEET_STATUSES, KONTEKS_STATUSES } from "../config/constant.js";
 
 /**
  * Verify user belongs to the specified unit kerja
@@ -42,7 +42,7 @@ export const verifyKonteksExistsAndActive = async (konteksId) => {
     throw new ResponseError(404, "Konteks tidak ditemukan.");
   }
 
-  if (!konteks.isActive) {
+  if (konteks.status !== KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(
       400,
       "Konteks tidak aktif. Hanya dapat membuat kertas kerja untuk konteks yang aktif."

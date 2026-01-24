@@ -39,7 +39,7 @@ export const konteksRoutes = [
   {
     method: "delete",
     path: "/konteks/:konteksId",
-    handler: konteksController.remove,
+    handler: konteksController.archive,
     roles: [ROLES.KOMITE_PUSAT, ROLES.ADMINISTRATOR],
   },
 ];

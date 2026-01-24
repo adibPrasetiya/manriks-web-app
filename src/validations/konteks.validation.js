@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { KONTEKS_STATUSES } from "../config/constant.js";
 
 const createKonteksSchema = Joi.object({
   name: Joi.string().min(3).max(255).required().messages({
@@ -102,7 +103,11 @@ const searchKonteksSchema = Joi.object({
   code: Joi.string().max(100),
   periodStart: Joi.number().integer().min(2000).max(2100),
   periodEnd: Joi.number().integer().min(2000).max(2100),
-  isActive: Joi.boolean(),
+  status: Joi.string()
+    .valid(...Object.values(KONTEKS_STATUSES))
+    .messages({
+      "any.only": "Status harus salah satu dari: ACTIVE, INACTIVE, ARCHIVED",
+    }),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 });
