@@ -8,20 +8,21 @@ datasource db {
 }
 
 model User {
-  id                 String     @id @default(cuid())
-  username           String     @unique @db.VarChar(255)
-  name               String     @db.VarChar(255)
-  email              String     @unique @db.VarChar(255)
-  password           String     @db.VarChar(255)
-  isActive           Boolean    @default(false)
-  isVerified         Boolean    @default(false)
+  id                 String          @id @default(cuid())
+  username           String          @unique @db.VarChar(255)
+  name               String          @db.VarChar(255)
+  email              String          @unique @db.VarChar(255)
+  password           String          @db.VarChar(255)
+  isActive           Boolean         @default(false)
+  isVerified         Boolean         @default(false)
   passwordChangedAt  DateTime?
-  mustChangePassword Boolean    @default(false)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  mustChangePassword Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
   userRoles          UserRole[]
   session            Session?
   profile            Profile?
+  riskWorksheets     RiskWorksheet[]
 
   @@index([email])
   @@index([username])
@@ -185,35 +186,35 @@ enum KonteksStatus {
 }
 
 model Konteks {
-  id           String   @id @default(cuid())
-  name         String   @db.VarChar(255)
-  code         String   @unique @db.VarChar(100)
-  description  String?  @db.Text
+  id          String  @id @default(cuid())
+  name        String  @db.VarChar(255)
+  code        String  @unique @db.VarChar(100)
+  description String? @db.Text
 
   // Periode konteks (tahun)
-  periodStart  Int      // Tahun mulai, misal: 2024
-  periodEnd    Int      // Tahun akhir, misal: 2025
+  periodStart Int // Tahun mulai, misal: 2024
+  periodEnd   Int // Tahun akhir, misal: 2025
 
   // Matrix size (ukuran matriks risiko, e.g., 5 = 5x5)
-  matrixSize   Int      @default(5)
+  matrixSize Int @default(5)
 
   // Risk Appetite (simple fields)
-  riskAppetiteLevel       String?  @db.VarChar(100)  // e.g., "MODERATE", "HIGH"
-  riskAppetiteDescription String?  @db.Text
+  riskAppetiteLevel       String? @db.VarChar(100) // e.g., "MEDIUM", "HIGH"
+  riskAppetiteDescription String? @db.Text
 
   // Status
-  status       KonteksStatus  @default(INACTIVE)
+  status KonteksStatus @default(INACTIVE)
 
   // Timestamps
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  createdBy    String?  // userId KOMITE_PUSAT yang buat
-  updatedBy    String?  // userId KOMITE_PUSAT yang update terakhir
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // userId KOMITE_PUSAT yang buat
+  updatedBy String? // userId KOMITE_PUSAT yang update terakhir
 
   // Relations
-  riskCategories   RiskCategory[]
-  riskMatrices     RiskMatrix[]
-  riskWorksheets   RiskWorksheet[]
+  riskCategories RiskCategory[]
+  riskMatrices   RiskMatrix[]
+  riskWorksheets RiskWorksheet[]
 
   @@index([code])
   @@index([status])
@@ -222,16 +223,16 @@ model Konteks {
 }
 
 model RiskCategory {
-  id          String   @id @default(cuid())
-  konteksId   String
-  konteks     Konteks  @relation(fields: [konteksId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  konteksId String
+  konteks   Konteks @relation(fields: [konteksId], references: [id], onDelete: Cascade)
 
-  name        String   @db.VarChar(255)  // e.g., "Risiko Fisik", "Risiko SDM"
-  description String?  @db.Text
-  order       Int      @default(0)       // Display order
+  name        String  @db.VarChar(255) // e.g., "Risiko Fisik", "Risiko SDM"
+  description String? @db.Text
+  order       Int     @default(0) // Display order
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   likelihoodScales LikelihoodScale[]
@@ -247,14 +248,14 @@ model LikelihoodScale {
   riskCategoryId String
   riskCategory   RiskCategory @relation(fields: [riskCategoryId], references: [id], onDelete: Cascade)
 
-  level       Int      // 1, 2, 3, 4, 5 (or 1-10)
-  label       String   @db.VarChar(100)  // e.g., "Sangat Jarang", "Jarang"
-  description String   @db.Text          // e.g., "< 5% kemungkinan terjadi"
+  level       Int // 1, 2, 3, 4, 5 (or 1-10)
+  label       String @db.VarChar(100) // e.g., "Sangat Jarang", "Jarang"
+  description String @db.Text // e.g., "< 5% kemungkinan terjadi"
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([riskCategoryId, level])  // Each level must be unique per risk category
+  @@unique([riskCategoryId, level]) // Each level must be unique per risk category
   @@index([riskCategoryId])
   @@map("likelihood_scales")
 }
@@ -264,31 +265,31 @@ model ImpactScale {
   riskCategoryId String
   riskCategory   RiskCategory @relation(fields: [riskCategoryId], references: [id], onDelete: Cascade)
 
-  level       Int      // 1, 2, 3, 4, 5 (or 1-10)
-  label       String   @db.VarChar(100)  // e.g., "Tidak Signifikan", "Minor"
-  description String   @db.Text          // e.g., "Dampak minimal"
+  level       Int // 1, 2, 3, 4, 5 (or 1-10)
+  label       String @db.VarChar(100) // e.g., "Tidak Signifikan", "Minor"
+  description String @db.Text // e.g., "Dampak minimal"
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([riskCategoryId, level])  // Each level must be unique per risk category
+  @@unique([riskCategoryId, level]) // Each level must be unique per risk category
   @@index([riskCategoryId])
   @@map("impact_scales")
 }
 
 model RiskMatrix {
-  id              String   @id @default(cuid())
-  konteksId       String
-  konteks         Konteks  @relation(fields: [konteksId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  konteksId String
+  konteks   Konteks @relation(fields: [konteksId], references: [id], onDelete: Cascade)
 
-  likelihoodLevel Int      // 1-5 (or 1-10)
-  impactLevel     Int      // 1-5 (or 1-10)
-  riskLevel       String   @db.VarChar(50)  // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  likelihoodLevel Int // 1-5 (or 1-10)
+  impactLevel     Int // 1-5 (or 1-10)
+  riskLevel       String @db.VarChar(50) // "LOW", "MEDIUM", "HIGH", "CRITICAL"
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([konteksId, likelihoodLevel, impactLevel])  // Each combination unique per konteks
+  @@unique([konteksId, likelihoodLevel, impactLevel]) // Each combination unique per konteks
   @@index([konteksId])
   @@index([konteksId, riskLevel])
   @@map("risk_matrices")
@@ -312,16 +313,16 @@ model Asset {
   categoryId  String
   category    AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
-  name        String        @db.VarChar(255)
-  code        String        @db.VarChar(100)
-  description String?       @db.Text
-  owner       String?       @db.VarChar(255)
-  status      AssetStatus   @default(ACTIVE)
+  name        String      @db.VarChar(255)
+  code        String      @db.VarChar(100)
+  description String?     @db.Text
+  owner       String?     @db.VarChar(255)
+  status      AssetStatus @default(ACTIVE)
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  createdBy   String?
-  updatedBy   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
 
   @@unique([unitKerjaId, code])
   @@index([unitKerjaId])
@@ -331,19 +332,20 @@ model Asset {
 }
 
 model RiskWorksheet {
-  id          String              @id @default(cuid())
+  id          String    @id @default(cuid())
   unitKerjaId String
-  unitKerja   UnitKerja           @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
+  unitKerja   UnitKerja @relation(fields: [unitKerjaId], references: [id], onDelete: Restrict)
   konteksId   String
-  konteks     Konteks             @relation(fields: [konteksId], references: [id], onDelete: Restrict)
-  ownerId     String              // User ID pembuat
+  konteks     Konteks   @relation(fields: [konteksId], references: [id], onDelete: Restrict)
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
   name        String              @db.VarChar(255)
   description String?             @db.Text
   status      RiskWorksheetStatus @default(INACTIVE)
 
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([unitKerjaId, konteksId, name])
   @@index([unitKerjaId])

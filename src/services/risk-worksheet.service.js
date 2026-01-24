@@ -46,7 +46,7 @@ const create = async (unitKerjaId, reqBody, user) => {
   if (existingName) {
     throw new ResponseError(
       409,
-      `Nama kertas kerja "${reqBody.name}" sudah digunakan untuk konteks ini.`
+      `Nama kertas kerja "${reqBody.name}" sudah digunakan untuk konteks ini.`,
     );
   }
 
@@ -60,7 +60,7 @@ const create = async (unitKerjaId, reqBody, user) => {
     data: {
       unitKerjaId,
       konteksId: reqBody.konteksId,
-      ownerId: user.id,
+      ownerId: user.userId,
       name: reqBody.name,
       description: reqBody.description || null,
       status: reqBody.status,
@@ -245,7 +245,7 @@ const update = async (unitKerjaId, id, reqBody, user) => {
   if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengubah kertas kerja yang sudah diarsipkan."
+      "Tidak dapat mengubah kertas kerja yang sudah diarsipkan.",
     );
   }
 
@@ -263,7 +263,7 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     if (existingName) {
       throw new ResponseError(
         409,
-        `Nama kertas kerja "${reqBody.name}" sudah digunakan untuk konteks ini.`
+        `Nama kertas kerja "${reqBody.name}" sudah digunakan untuk konteks ini.`,
       );
     }
   }
@@ -327,13 +327,17 @@ const setActive = async (unitKerjaId, id, user) => {
   }
 
   // Only owner can change status
-  checkWorksheetOwnership(existingWorksheet, user.id, "mengaktifkan kertas kerja");
+  checkWorksheetOwnership(
+    existingWorksheet,
+    user.id,
+    "mengaktifkan kertas kerja",
+  );
 
   // Cannot activate archived worksheet
   if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengaktifkan kertas kerja yang sudah diarsipkan."
+      "Tidak dapat mengaktifkan kertas kerja yang sudah diarsipkan.",
     );
   }
 
@@ -346,7 +350,7 @@ const setActive = async (unitKerjaId, id, user) => {
   await checkActiveWorksheetLimit(
     unitKerjaId,
     existingWorksheet.konteksId,
-    idParams.id
+    idParams.id,
   );
 
   // Update status to ACTIVE
@@ -408,13 +412,17 @@ const setInactive = async (unitKerjaId, id, user) => {
   }
 
   // Only owner can change status
-  checkWorksheetOwnership(existingWorksheet, user.id, "menonaktifkan kertas kerja");
+  checkWorksheetOwnership(
+    existingWorksheet,
+    user.id,
+    "menonaktifkan kertas kerja",
+  );
 
   // Cannot deactivate archived worksheet
   if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat menonaktifkan kertas kerja yang sudah diarsipkan."
+      "Tidak dapat menonaktifkan kertas kerja yang sudah diarsipkan.",
     );
   }
 
@@ -482,7 +490,11 @@ const archive = async (unitKerjaId, id, user) => {
   }
 
   // Only owner can archive
-  checkWorksheetOwnership(existingWorksheet, user.id, "mengarsipkan kertas kerja");
+  checkWorksheetOwnership(
+    existingWorksheet,
+    user.id,
+    "mengarsipkan kertas kerja",
+  );
 
   // Already archived
   if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
