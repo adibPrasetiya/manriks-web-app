@@ -22,7 +22,7 @@ const checkUnitKerjaAccess = (user, unitKerjaId) => {
     if (user.unitKerjaId !== unitKerjaId) {
       throw new ResponseError(
         403,
-        "Akses ditolak. Anda tidak memiliki akses ke unit kerja ini."
+        "Akses ditolak. Anda tidak memiliki akses ke unit kerja ini.",
       );
     }
   }
@@ -88,7 +88,7 @@ const create = async (unitKerjaId, reqBody, user) => {
   if (existingCode) {
     throw new ResponseError(
       409,
-      `Kode aset "${reqBody.code}" sudah digunakan dalam unit kerja ini.`
+      `Kode aset "${reqBody.code}" sudah digunakan dalam unit kerja ini.`,
     );
   }
 
@@ -102,7 +102,7 @@ const create = async (unitKerjaId, reqBody, user) => {
       description: reqBody.description || null,
       owner: reqBody.owner || null,
       status: reqBody.status,
-      createdBy: user.id,
+      createdBy: user.userId,
     },
     select: {
       id: true,
@@ -325,7 +325,7 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     if (codeExists) {
       throw new ResponseError(
         409,
-        `Kode aset "${reqBody.code}" sudah digunakan oleh aset lain dalam unit kerja ini.`
+        `Kode aset "${reqBody.code}" sudah digunakan oleh aset lain dalam unit kerja ini.`,
       );
     }
   }
@@ -337,7 +337,7 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     },
     data: {
       ...reqBody,
-      updatedBy: user.id,
+      updatedBy: user.userId,
     },
     select: {
       id: true,
@@ -430,13 +430,13 @@ const setActive = async (unitKerjaId, id, user) => {
   if (existingAsset.status === ASSET_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengaktifkan aset yang sudah diarsipkan."
+      "Tidak dapat mengaktifkan aset yang sudah diarsipkan.",
     );
   }
 
   const updatedAsset = await prismaClient.asset.update({
     where: { id: idParams.id },
-    data: { status: ASSET_STATUSES.ACTIVE, updatedBy: user.id },
+    data: { status: ASSET_STATUSES.ACTIVE, updatedBy: user.userId },
     select: assetSelect,
   });
 
@@ -479,13 +479,13 @@ const setInactive = async (unitKerjaId, id, user) => {
   if (existingAsset.status === ASSET_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat menonaktifkan aset yang sudah diarsipkan."
+      "Tidak dapat menonaktifkan aset yang sudah diarsipkan.",
     );
   }
 
   const updatedAsset = await prismaClient.asset.update({
     where: { id: idParams.id },
-    data: { status: ASSET_STATUSES.INACTIVE, updatedBy: user.id },
+    data: { status: ASSET_STATUSES.INACTIVE, updatedBy: user.userId },
     select: assetSelect,
   });
 
@@ -528,14 +528,14 @@ const archive = async (unitKerjaId, id, user) => {
   if (existingAsset.status === ASSET_STATUSES.ACTIVE) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengarsipkan aset yang masih aktif. Nonaktifkan terlebih dahulu."
+      "Tidak dapat mengarsipkan aset yang masih aktif. Nonaktifkan terlebih dahulu.",
     );
   }
 
   // Soft delete - update status to ARCHIVED
   const archivedAsset = await prismaClient.asset.update({
     where: { id: idParams.id },
-    data: { status: ASSET_STATUSES.ARCHIVED, updatedBy: user.id },
+    data: { status: ASSET_STATUSES.ARCHIVED, updatedBy: user.userId },
     select: assetSelect,
   });
 

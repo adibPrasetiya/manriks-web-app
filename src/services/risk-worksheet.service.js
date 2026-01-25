@@ -241,18 +241,24 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     throw new ResponseError(404, "Kertas kerja risiko tidak ditemukan.");
   }
 
+  checkWorksheetOwnership(
+    existingWorksheet,
+    user.userId,
+    "mengedit data worksheet",
+  );
+
   // Cannot update archived worksheet
   if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
     throw new ResponseError(
-      400,
+      403,
       "Tidak dapat mengubah kertas kerja yang sudah diarsipkan.",
     );
   }
 
   if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ACTIVE) {
     throw new ResponseError(
-      400,
-      "Tidak daya mengubah kertas kerja yang sudah diaktifkan.",
+      403,
+      "Tidak dapat mengubah kertas kerja yang sudah diaktifkan.",
     );
   }
 
@@ -336,7 +342,7 @@ const setActive = async (unitKerjaId, id, user) => {
   // Only owner can change status
   checkWorksheetOwnership(
     existingWorksheet,
-    user.id,
+    user.userId,
     "mengaktifkan kertas kerja",
   );
 
@@ -421,7 +427,7 @@ const setInactive = async (unitKerjaId, id, user) => {
   // Only owner can change status
   checkWorksheetOwnership(
     existingWorksheet,
-    user.id,
+    user.userId,
     "menonaktifkan kertas kerja",
   );
 
@@ -499,7 +505,7 @@ const archive = async (unitKerjaId, id, user) => {
   // Only owner can archive
   checkWorksheetOwnership(
     existingWorksheet,
-    user.id,
+    user.userId,
     "mengarsipkan kertas kerja",
   );
 
