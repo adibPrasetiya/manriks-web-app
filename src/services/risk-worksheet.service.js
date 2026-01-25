@@ -249,6 +249,13 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     );
   }
 
+  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ACTIVE) {
+    throw new ResponseError(
+      400,
+      "Tidak daya mengubah kertas kerja yang sudah diaktifkan.",
+    );
+  }
+
   // If updating name, check uniqueness
   if (reqBody.name && reqBody.name !== existingWorksheet.name) {
     const existingName = await prismaClient.riskWorksheet.findFirst({
