@@ -149,6 +149,29 @@ enum RiskWorksheetStatus {
   ARCHIVED
 }
 
+enum RiskAssessmentStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum MitigationStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MitigationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 model ProfileChangeRequest {
   id        String  @id @default(cuid())
   profileId String
@@ -347,10 +370,147 @@ model RiskWorksheet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  riskAssessments RiskAssessment[]
+
   @@unique([unitKerjaId, konteksId, name])
   @@index([unitKerjaId])
   @@index([konteksId])
   @@index([ownerId])
   @@index([status])
   @@map("risk_worksheets")
+}
+
+model RiskAssessment {
+  id          String        @id @default(cuid())
+  worksheetId String
+  worksheet   RiskWorksheet @relation(fields: [worksheetId], references: [id], onDelete: Restrict)
+
+  code           String   @db.VarChar(100)
+  name           String   @db.VarChar(255)
+  description    String?  @db.Text
+  assessmentDate DateTime @default(now())
+
+  status RiskAssessmentStatus @default(DRAFT)
+
+  // Audit trail
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+  updatedBy String?
+
+  // Submission tracking
+  submittedAt DateTime?
+  submittedBy String?
+
+  // Review tracking (KOMITE_PUSAT)
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNotes String?   @db.Text
+
+  // Relations
+  items RiskAssessmentItem[]
+
+  // Extensibility
+  metadata Json?
+
+  @@unique([worksheetId, code])
+  @@index([worksheetId])
+  @@index([status])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("risk_assessments")
+}
+
+model RiskAssessmentItem {
+  id           String         @id @default(cuid())
+  assessmentId String
+  assessment   RiskAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  riskCode        String  @db.VarChar(50)
+  riskName        String  @db.VarChar(255)
+  riskDescription String? @db.Text
+  assetId         String?
+  riskCategoryId  String
+
+  // Inherent Risk (sebelum kontrol)
+  inherentLikelihood Int
+  inherentImpact     Int
+  inherentRiskLevel  String @db.VarChar(50)
+
+  // Control Assessment
+  existingControls     String? @db.Text
+  controlEffectiveness String? @db.VarChar(50)
+
+  // Residual Risk (setelah kontrol)
+  residualLikelihood Int
+  residualImpact     Int
+  residualRiskLevel  String @db.VarChar(50)
+
+  // Treatment
+  treatmentOption    String? @db.VarChar(50)
+  treatmentRationale String? @db.Text
+
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  mitigations RiskMitigation[]
+
+  // Extensibility
+  metadata Json?
+
+  @@unique([assessmentId, riskCode])
+  @@index([assessmentId])
+  @@index([riskCategoryId])
+  @@index([assetId])
+  @@index([inherentRiskLevel])
+  @@index([residualRiskLevel])
+  @@map("risk_assessment_items")
+}
+
+model RiskMitigation {
+  id     String             @id @default(cuid())
+  itemId String
+  item   RiskAssessmentItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  code        String  @db.VarChar(50)
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+
+  priority         MitigationPriority @default(MEDIUM)
+  plannedStartDate DateTime?
+  plannedEndDate   DateTime?
+  actualStartDate  DateTime?
+  actualEndDate    DateTime?
+
+  responsiblePerson String? @db.VarChar(255)
+  responsibleUnit   String? @db.VarChar(255)
+
+  status             MitigationStatus @default(PLANNED)
+  progressPercentage Int              @default(0)
+  progressNotes      String?          @db.Text
+
+  // Validasi oleh KOMITE_PUSAT
+  validatedAt     DateTime?
+  validatedBy     String?
+  validationNotes String?   @db.Text
+  isValidated     Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+  updatedBy String?
+
+  // Extensibility
+  metadata Json?
+
+  @@unique([itemId, code])
+  @@index([itemId])
+  @@index([status])
+  @@index([priority])
+  @@index([isValidated])
+  @@map("risk_mitigations")
 }

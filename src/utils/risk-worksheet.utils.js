@@ -1,12 +1,23 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
-import { RISK_WORKSHEET_STATUSES, KONTEKS_STATUSES } from "../config/constant.js";
+import { RISK_WORKSHEET_STATUSES, KONTEKS_STATUSES, ROLES } from "../config/constant.js";
 
 /**
  * Verify user belongs to the specified unit kerja
  * PENGELOLA_RISIKO_UKER can only access their own unit kerja
+ * @param {Object} user - User object with unitKerjaId and roles
+ * @param {string} unitKerjaId - Unit kerja ID to check access
+ * @param {Object} options - Options
+ * @param {boolean} options.allowKomitePusat - Allow KOMITE_PUSAT to access all unit kerja
  */
-export const checkUnitKerjaAccess = (user, unitKerjaId) => {
+export const checkUnitKerjaAccess = (user, unitKerjaId, options = {}) => {
+  const { allowKomitePusat = false } = options;
+
+  // KOMITE_PUSAT can access all unit kerja if allowed
+  if (allowKomitePusat && user.roles.includes(ROLES.KOMITE_PUSAT)) {
+    return;
+  }
+
   if (user.unitKerjaId !== unitKerjaId) {
     throw new ResponseError(
       403,
