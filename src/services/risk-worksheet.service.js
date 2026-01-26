@@ -1,12 +1,11 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
-import { RISK_WORKSHEET_STATUSES } from "../config/constant.js";
+import { RISK_WORKSHEET_STATUSES, ROLES } from "../config/constant.js";
 import {
   checkUnitKerjaAccess,
   verifyUnitKerjaExists,
   verifyKonteksExistsAndActive,
-  checkActiveWorksheetLimit,
   checkWorksheetOwnership,
 } from "../utils/risk-worksheet.utils.js";
 import {
@@ -15,7 +14,47 @@ import {
   searchRiskWorksheetSchema,
   unitKerjaIdSchema,
   worksheetIdSchema,
+  approvalNotesSchema,
 } from "../validations/risk-worksheet.validation.js";
+
+const worksheetSelect = {
+  id: true,
+  name: true,
+  description: true,
+  status: true,
+  ownerId: true,
+  createdAt: true,
+  updatedAt: true,
+  submittedAt: true,
+  submittedBy: true,
+  approvedAt: true,
+  approvedBy: true,
+  approvalNotes: true,
+  unitKerja: {
+    select: { id: true, name: true, code: true },
+  },
+  konteks: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      periodStart: true,
+      periodEnd: true,
+    },
+  },
+  owner: {
+    select: { id: true, name: true, username: true },
+  },
+  submitter: {
+    select: { id: true, name: true, username: true },
+  },
+  approver: {
+    select: { id: true, name: true, username: true },
+  },
+  _count: {
+    select: { riskAssessmentItems: true },
+  },
+};
 
 const create = async (unitKerjaId, reqBody, user) => {
   // Validate unit kerja ID
@@ -50,12 +89,7 @@ const create = async (unitKerjaId, reqBody, user) => {
     );
   }
 
-  // If status is ACTIVE, check the limit
-  if (reqBody.status === RISK_WORKSHEET_STATUSES.ACTIVE) {
-    await checkActiveWorksheetLimit(unitKerjaId, reqBody.konteksId);
-  }
-
-  // Create worksheet
+  // Create worksheet - always starts as DRAFT
   const worksheet = await prismaClient.riskWorksheet.create({
     data: {
       unitKerjaId,
@@ -63,29 +97,9 @@ const create = async (unitKerjaId, reqBody, user) => {
       ownerId: user.userId,
       name: reqBody.name,
       description: reqBody.description || null,
-      status: reqBody.status,
+      status: RISK_WORKSHEET_STATUSES.DRAFT,
     },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      unitKerja: {
-        select: { id: true, name: true, code: true },
-      },
-      konteks: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          periodStart: true,
-          periodEnd: true,
-        },
-      },
-    },
+    select: worksheetSelect,
   });
 
   return {
@@ -99,8 +113,8 @@ const search = async (unitKerjaId, queryParams, user) => {
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
 
-  // Check unit kerja access
-  checkUnitKerjaAccess(user, unitKerjaId);
+  // Check unit kerja access (allow KOMITE_PUSAT to view all)
+  checkUnitKerjaAccess(user, unitKerjaId, { allowKomitePusat: true });
 
   // Verify unit kerja exists
   await verifyUnitKerjaExists(unitKerjaId);
@@ -132,18 +146,7 @@ const search = async (unitKerjaId, queryParams, user) => {
     skip,
     take: limit,
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      konteks: {
-        select: { id: true, name: true, code: true },
-      },
-    },
+    select: worksheetSelect,
   });
 
   const totalPages = Math.ceil(totalItems / limit);
@@ -167,35 +170,15 @@ const getById = async (unitKerjaId, id, user) => {
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
 
-  // Check unit kerja access
-  checkUnitKerjaAccess(user, unitKerjaId);
+  // Check unit kerja access (allow KOMITE_PUSAT to view)
+  checkUnitKerjaAccess(user, unitKerjaId, { allowKomitePusat: true });
 
   // Validate worksheet ID
   const idParams = validate(worksheetIdSchema, { id });
 
   const worksheet = await prismaClient.riskWorksheet.findUnique({
     where: { id: idParams.id },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      unitKerja: {
-        select: { id: true, name: true, code: true },
-      },
-      konteks: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          periodStart: true,
-          periodEnd: true,
-        },
-      },
-    },
+    select: worksheetSelect,
   });
 
   if (!worksheet) {
@@ -247,18 +230,11 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     "mengedit data worksheet",
   );
 
-  // Cannot update archived worksheet
-  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
+  // Can only update DRAFT worksheets
+  if (existingWorksheet.status !== RISK_WORKSHEET_STATUSES.DRAFT) {
     throw new ResponseError(
       403,
-      "Tidak dapat mengubah kertas kerja yang sudah diarsipkan.",
-    );
-  }
-
-  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ACTIVE) {
-    throw new ResponseError(
-      403,
-      "Tidak dapat mengubah kertas kerja yang sudah diaktifkan.",
+      "Hanya dapat mengubah kertas kerja dengan status DRAFT.",
     );
   }
 
@@ -285,27 +261,7 @@ const update = async (unitKerjaId, id, reqBody, user) => {
   const updatedWorksheet = await prismaClient.riskWorksheet.update({
     where: { id: idParams.id },
     data: reqBody,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      unitKerja: {
-        select: { id: true, name: true, code: true },
-      },
-      konteks: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          periodStart: true,
-          periodEnd: true,
-        },
-      },
-    },
+    select: worksheetSelect,
   });
 
   return {
@@ -314,7 +270,11 @@ const update = async (unitKerjaId, id, reqBody, user) => {
   };
 };
 
-const setActive = async (unitKerjaId, id, user) => {
+/**
+ * Submit worksheet for approval (DRAFT → SUBMITTED)
+ * Only owner can submit
+ */
+const submit = async (unitKerjaId, id, user) => {
   // Validate unit kerja ID
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -324,6 +284,78 @@ const setActive = async (unitKerjaId, id, user) => {
 
   // Validate worksheet ID
   const idParams = validate(worksheetIdSchema, { id });
+
+  // Check if worksheet exists
+  const existingWorksheet = await prismaClient.riskWorksheet.findUnique({
+    where: { id: idParams.id },
+    include: {
+      _count: { select: { riskAssessmentItems: true } },
+    },
+  });
+
+  if (!existingWorksheet) {
+    throw new ResponseError(404, "Kertas kerja risiko tidak ditemukan.");
+  }
+
+  // Verify worksheet belongs to the specified unit kerja
+  if (existingWorksheet.unitKerjaId !== unitKerjaId) {
+    throw new ResponseError(404, "Kertas kerja risiko tidak ditemukan.");
+  }
+
+  // Only owner can submit
+  checkWorksheetOwnership(
+    existingWorksheet,
+    user.userId,
+    "mengajukan kertas kerja",
+  );
+
+  // Can only submit DRAFT worksheets
+  if (existingWorksheet.status !== RISK_WORKSHEET_STATUSES.DRAFT) {
+    throw new ResponseError(
+      400,
+      "Hanya dapat mengajukan kertas kerja dengan status DRAFT.",
+    );
+  }
+
+  // Must have at least 1 risk assessment item
+  if (existingWorksheet._count.riskAssessmentItems === 0) {
+    throw new ResponseError(
+      400,
+      "Kertas kerja harus memiliki minimal 1 item risiko sebelum diajukan.",
+    );
+  }
+
+  // Update status to SUBMITTED
+  const updatedWorksheet = await prismaClient.riskWorksheet.update({
+    where: { id: idParams.id },
+    data: {
+      status: RISK_WORKSHEET_STATUSES.SUBMITTED,
+      submittedAt: new Date(),
+      submittedBy: user.userId,
+    },
+    select: worksheetSelect,
+  });
+
+  return {
+    message: "Kertas kerja risiko berhasil diajukan untuk persetujuan",
+    data: updatedWorksheet,
+  };
+};
+
+/**
+ * Approve worksheet (SUBMITTED → APPROVED)
+ * Only KOMITE_PUSAT can approve
+ */
+const approve = async (unitKerjaId, id, reqBody, user) => {
+  // Validate unit kerja ID
+  const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
+  unitKerjaId = unitKerjaParams.unitKerjaId;
+
+  // Validate worksheet ID
+  const idParams = validate(worksheetIdSchema, { id });
+
+  // Validate request body (optional approval notes)
+  reqBody = validate(approvalNotesSchema, reqBody || {});
 
   // Check if worksheet exists
   const existingWorksheet = await prismaClient.riskWorksheet.findUnique({
@@ -339,76 +371,61 @@ const setActive = async (unitKerjaId, id, user) => {
     throw new ResponseError(404, "Kertas kerja risiko tidak ditemukan.");
   }
 
-  // Only owner can change status
-  checkWorksheetOwnership(
-    existingWorksheet,
-    user.userId,
-    "mengaktifkan kertas kerja",
-  );
-
-  // Cannot activate archived worksheet
-  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
+  // Can only approve SUBMITTED worksheets
+  if (existingWorksheet.status !== RISK_WORKSHEET_STATUSES.SUBMITTED) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengaktifkan kertas kerja yang sudah diarsipkan.",
+      "Hanya dapat menyetujui kertas kerja dengan status SUBMITTED.",
     );
   }
 
-  // Already active
-  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ACTIVE) {
-    throw new ResponseError(400, "Kertas kerja sudah aktif.");
-  }
-
-  // Check the limit - only 1 active per konteks per unit kerja
-  await checkActiveWorksheetLimit(
-    unitKerjaId,
-    existingWorksheet.konteksId,
-    idParams.id,
-  );
-
-  // Update status to ACTIVE
+  // Update status to APPROVED
   const updatedWorksheet = await prismaClient.riskWorksheet.update({
     where: { id: idParams.id },
-    data: { status: RISK_WORKSHEET_STATUSES.ACTIVE },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      unitKerja: {
-        select: { id: true, name: true, code: true },
-      },
-      konteks: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          periodStart: true,
-          periodEnd: true,
-        },
-      },
+    data: {
+      status: RISK_WORKSHEET_STATUSES.APPROVED,
+      approvedAt: new Date(),
+      approvedBy: user.userId,
+      approvalNotes: reqBody.approvalNotes || null,
     },
+    select: worksheetSelect,
   });
 
   return {
-    message: "Kertas kerja risiko berhasil diaktifkan",
+    message: "Kertas kerja risiko berhasil disetujui",
     data: updatedWorksheet,
   };
 };
 
-const setInactive = async (unitKerjaId, id, user) => {
+/**
+ * Reject worksheet (SUBMITTED → DRAFT)
+ * Only KOMITE_PUSAT can reject
+ */
+const reject = async (unitKerjaId, id, reqBody, user) => {
   // Validate unit kerja ID
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
 
-  // Check unit kerja access
-  checkUnitKerjaAccess(user, unitKerjaId);
+  // Check if user has KOMITE_PUSAT role
+  if (!user.roles.includes(ROLES.KOMITE_PUSAT)) {
+    throw new ResponseError(
+      403,
+      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat menolak kertas kerja.",
+    );
+  }
 
   // Validate worksheet ID
   const idParams = validate(worksheetIdSchema, { id });
+
+  // Validate request body (required rejection notes)
+  reqBody = validate(approvalNotesSchema, reqBody || {});
+
+  if (!reqBody.approvalNotes || reqBody.approvalNotes.trim().length < 10) {
+    throw new ResponseError(
+      400,
+      "Alasan penolakan wajib diisi (minimal 10 karakter).",
+    );
+  }
 
   // Check if worksheet exists
   const existingWorksheet = await prismaClient.riskWorksheet.findUnique({
@@ -424,59 +441,37 @@ const setInactive = async (unitKerjaId, id, user) => {
     throw new ResponseError(404, "Kertas kerja risiko tidak ditemukan.");
   }
 
-  // Only owner can change status
-  checkWorksheetOwnership(
-    existingWorksheet,
-    user.userId,
-    "menonaktifkan kertas kerja",
-  );
-
-  // Cannot deactivate archived worksheet
-  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.ARCHIVED) {
+  // Can only reject SUBMITTED worksheets
+  if (existingWorksheet.status !== RISK_WORKSHEET_STATUSES.SUBMITTED) {
     throw new ResponseError(
       400,
-      "Tidak dapat menonaktifkan kertas kerja yang sudah diarsipkan.",
+      "Hanya dapat menolak kertas kerja dengan status SUBMITTED.",
     );
   }
 
-  // Already inactive
-  if (existingWorksheet.status === RISK_WORKSHEET_STATUSES.INACTIVE) {
-    throw new ResponseError(400, "Kertas kerja sudah tidak aktif.");
-  }
-
-  // Update status to INACTIVE
+  // Update status back to DRAFT
   const updatedWorksheet = await prismaClient.riskWorksheet.update({
     where: { id: idParams.id },
-    data: { status: RISK_WORKSHEET_STATUSES.INACTIVE },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      unitKerja: {
-        select: { id: true, name: true, code: true },
-      },
-      konteks: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          periodStart: true,
-          periodEnd: true,
-        },
-      },
+    data: {
+      status: RISK_WORKSHEET_STATUSES.DRAFT,
+      approvalNotes: reqBody.approvalNotes,
+      // Clear submission tracking so owner can resubmit
+      submittedAt: null,
+      submittedBy: null,
     },
+    select: worksheetSelect,
   });
 
   return {
-    message: "Kertas kerja risiko berhasil dinonaktifkan",
+    message: "Kertas kerja risiko ditolak dan dikembalikan ke DRAFT",
     data: updatedWorksheet,
   };
 };
 
+/**
+ * Archive worksheet (any status except ARCHIVED → ARCHIVED)
+ * Only owner can archive
+ */
 const archive = async (unitKerjaId, id, user) => {
   // Validate unit kerja ID
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
@@ -518,27 +513,7 @@ const archive = async (unitKerjaId, id, user) => {
   const archivedWorksheet = await prismaClient.riskWorksheet.update({
     where: { id: idParams.id },
     data: { status: RISK_WORKSHEET_STATUSES.ARCHIVED },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      unitKerja: {
-        select: { id: true, name: true, code: true },
-      },
-      konteks: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          periodStart: true,
-          periodEnd: true,
-        },
-      },
-    },
+    select: worksheetSelect,
   });
 
   return {
@@ -552,7 +527,8 @@ export default {
   search,
   getById,
   update,
-  setActive,
-  setInactive,
+  submit,
+  approve,
+  reject,
   archive,
 };

@@ -7,13 +7,10 @@ const create = async (req, res, next) => {
       req.body,
       req.user
     );
-    res
-      .status(201)
-      .json({
-        message: result.message,
-        data: result.data,
-      })
-      .end();
+    res.status(201).json({
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
     next(error);
   }
@@ -26,14 +23,11 @@ const search = async (req, res, next) => {
       req.query,
       req.user
     );
-    res
-      .status(200)
-      .json({
-        message: result.message,
-        data: result.data,
-        pagination: result.pagination,
-      })
-      .end();
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+      pagination: result.pagination,
+    });
   } catch (error) {
     next(error);
   }
@@ -46,13 +40,10 @@ const getById = async (req, res, next) => {
       req.params.id,
       req.user
     );
-    res
-      .status(200)
-      .json({
-        message: result.message,
-        data: result.data,
-      })
-      .end();
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
     next(error);
   }
@@ -66,51 +57,60 @@ const update = async (req, res, next) => {
       req.body,
       req.user
     );
-    res
-      .status(200)
-      .json({
-        message: result.message,
-        data: result.data,
-      })
-      .end();
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-const setActive = async (req, res, next) => {
+const submit = async (req, res, next) => {
   try {
-    const result = await riskWorksheetService.setActive(
+    const result = await riskWorksheetService.submit(
       req.params.unitKerjaId,
       req.params.id,
       req.user
     );
-    res
-      .status(200)
-      .json({
-        message: result.message,
-        data: result.data,
-      })
-      .end();
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-const setInactive = async (req, res, next) => {
+const approve = async (req, res, next) => {
   try {
-    const result = await riskWorksheetService.setInactive(
+    const result = await riskWorksheetService.approve(
       req.params.unitKerjaId,
       req.params.id,
+      req.body,
       req.user
     );
-    res
-      .status(200)
-      .json({
-        message: result.message,
-        data: result.data,
-      })
-      .end();
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const reject = async (req, res, next) => {
+  try {
+    const result = await riskWorksheetService.reject(
+      req.params.unitKerjaId,
+      req.params.id,
+      req.body,
+      req.user
+    );
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
     next(error);
   }
@@ -123,13 +123,10 @@ const archive = async (req, res, next) => {
       req.params.id,
       req.user
     );
-    res
-      .status(200)
-      .json({
-        message: result.message,
-        data: result.data,
-      })
-      .end();
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
   } catch (error) {
     next(error);
   }
@@ -140,7 +137,8 @@ export default {
   search,
   getById,
   update,
-  setActive,
-  setInactive,
+  submit,
+  approve,
+  reject,
   archive,
 };

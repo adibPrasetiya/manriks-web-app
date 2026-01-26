@@ -1,6 +1,6 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
-import { RISK_WORKSHEET_STATUSES, KONTEKS_STATUSES, ROLES } from "../config/constant.js";
+import { KONTEKS_STATUSES, ROLES } from "../config/constant.js";
 
 /**
  * Verify user belongs to the specified unit kerja
@@ -61,34 +61,6 @@ export const verifyKonteksExistsAndActive = async (konteksId) => {
   }
 
   return konteks;
-};
-
-/**
- * Check if there's already an ACTIVE worksheet for this unit kerja and konteks
- */
-export const checkActiveWorksheetLimit = async (
-  unitKerjaId,
-  konteksId,
-  excludeId = null
-) => {
-  const where = {
-    unitKerjaId,
-    konteksId,
-    status: RISK_WORKSHEET_STATUSES.ACTIVE,
-  };
-
-  if (excludeId) {
-    where.id = { not: excludeId };
-  }
-
-  const existingActive = await prismaClient.riskWorksheet.findFirst({ where });
-
-  if (existingActive) {
-    throw new ResponseError(
-      409,
-      "Unit kerja ini sudah memiliki kertas kerja aktif untuk konteks ini. Nonaktifkan kertas kerja lain terlebih dahulu."
-    );
-  }
 };
 
 /**

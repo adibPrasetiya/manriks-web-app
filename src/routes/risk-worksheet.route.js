@@ -12,13 +12,13 @@ export const riskWorksheetRoutes = [
     method: "get",
     path: "/unit-kerja/:unitKerjaId/risk-worksheets",
     handler: riskWorksheetController.search,
-    roles: [ROLES.PENGELOLA_RISIKO_UKER],
+    roles: [ROLES.PENGELOLA_RISIKO_UKER, ROLES.KOMITE_PUSAT],
   },
   {
     method: "get",
     path: "/unit-kerja/:unitKerjaId/risk-worksheets/:id",
     handler: riskWorksheetController.getById,
-    roles: [ROLES.PENGELOLA_RISIKO_UKER],
+    roles: [ROLES.PENGELOLA_RISIKO_UKER, ROLES.KOMITE_PUSAT],
   },
   {
     method: "patch",
@@ -28,15 +28,21 @@ export const riskWorksheetRoutes = [
   },
   {
     method: "patch",
-    path: "/unit-kerja/:unitKerjaId/risk-worksheets/:id/activate",
-    handler: riskWorksheetController.setActive,
+    path: "/unit-kerja/:unitKerjaId/risk-worksheets/:id/submit",
+    handler: riskWorksheetController.submit,
     roles: [ROLES.PENGELOLA_RISIKO_UKER],
   },
   {
     method: "patch",
-    path: "/unit-kerja/:unitKerjaId/risk-worksheets/:id/deactivate",
-    handler: riskWorksheetController.setInactive,
-    roles: [ROLES.PENGELOLA_RISIKO_UKER],
+    path: "/unit-kerja/:unitKerjaId/risk-worksheets/:id/approve",
+    handler: riskWorksheetController.approve,
+    roles: [ROLES.KOMITE_PUSAT],
+  },
+  {
+    method: "patch",
+    path: "/unit-kerja/:unitKerjaId/risk-worksheets/:id/reject",
+    handler: riskWorksheetController.reject,
+    roles: [ROLES.KOMITE_PUSAT],
   },
   {
     method: "delete",

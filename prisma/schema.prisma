@@ -22,7 +22,11 @@ model User {
   userRoles          UserRole[]
   session            Session?
   profile            Profile?
-  riskWorksheets     RiskWorksheet[]
+  riskWorksheets     RiskWorksheet[] @relation("WorksheetOwner")
+
+  // Relations for worksheet submission and approval
+  submittedWorksheets RiskWorksheet[] @relation("WorksheetSubmitter")
+  approvedWorksheets  RiskWorksheet[] @relation("WorksheetApprover")
 
   @@index([email])
   @@index([username])
@@ -144,8 +148,9 @@ enum ProfileRequestStatus {
 }
 
 enum RiskWorksheetStatus {
-  ACTIVE
-  INACTIVE
+  DRAFT
+  SUBMITTED
+  APPROVED
   ARCHIVED
 }
 
@@ -352,14 +357,25 @@ model RiskWorksheet {
   konteksId   String
   konteks     Konteks   @relation(fields: [konteksId], references: [id], onDelete: Restrict)
   ownerId     String
-  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  owner       User      @relation("WorksheetOwner", fields: [ownerId], references: [id], onDelete: Restrict)
 
   name        String              @db.VarChar(255)
   description String?             @db.Text
-  status      RiskWorksheetStatus @default(INACTIVE)
+  status      RiskWorksheetStatus @default(DRAFT)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Submission tracking
+  submittedAt DateTime?
+  submittedBy String?
+  submitter   User?     @relation("WorksheetSubmitter", fields: [submittedBy], references: [id], onDelete: Restrict)
+
+  // Approval tracking (KOMITE_PUSAT)
+  approvedAt    DateTime?
+  approvedBy    String?
+  approver      User?     @relation("WorksheetApprover", fields: [approvedBy], references: [id], onDelete: Restrict)
+  approvalNotes String?   @db.Text
 
   // Relations
   riskAssessmentItems RiskAssessmentItem[]
@@ -368,6 +384,8 @@ model RiskWorksheet {
   @@index([unitKerjaId])
   @@index([konteksId])
   @@index([ownerId])
+  @@index([submittedBy])
+  @@index([approvedBy])
   @@index([status])
   @@map("risk_worksheets")
 }

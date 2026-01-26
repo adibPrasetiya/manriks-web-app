@@ -9,10 +9,11 @@ export {
 } from "./risk-worksheet.utils.js";
 
 /**
- * Verify worksheet exists, is active, and belongs to the unit kerja
- * Used when creating new risk assessment item
+ * Verify worksheet exists, is DRAFT, and belongs to the unit kerja
+ * Used when creating/updating/deleting risk assessment items
+ * Items can only be modified when worksheet is in DRAFT status
  */
-export const verifyWorksheetExistsAndActive = async (
+export const verifyWorksheetExistsAndDraft = async (
   worksheetId,
   unitKerjaId
 ) => {
@@ -44,10 +45,10 @@ export const verifyWorksheetExistsAndActive = async (
     throw new ResponseError(404, "Kertas kerja risiko tidak ditemukan.");
   }
 
-  if (worksheet.status !== RISK_WORKSHEET_STATUSES.ACTIVE) {
+  if (worksheet.status !== RISK_WORKSHEET_STATUSES.DRAFT) {
     throw new ResponseError(
       400,
-      "Kertas kerja risiko tidak aktif. Hanya dapat menambah item risiko untuk kertas kerja yang aktif."
+      "Kertas kerja risiko bukan berstatus DRAFT. Hanya dapat memodifikasi item risiko untuk kertas kerja dengan status DRAFT."
     );
   }
 

@@ -5,7 +5,7 @@ import {
   checkUnitKerjaAccess,
   verifyUnitKerjaExists,
   verifyWorksheetExists,
-  verifyWorksheetExistsAndActive,
+  verifyWorksheetExistsAndDraft,
   checkWorksheetOwnership,
   generateRiskItemCode,
 } from "../utils/risk-assessment.utils.js";
@@ -62,8 +62,8 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
   // Verify unit kerja exists
   await verifyUnitKerjaExists(unitKerjaId);
 
-  // Verify worksheet exists and is ACTIVE
-  const worksheet = await verifyWorksheetExistsAndActive(
+  // Verify worksheet exists and status as DRAFT
+  const worksheet = await verifyWorksheetExistsAndDraft(
     worksheetId,
     unitKerjaId,
   );
@@ -273,7 +273,7 @@ const update = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
   checkUnitKerjaAccess(user, unitKerjaId);
 
   // Verify worksheet exists and is ACTIVE
-  const worksheet = await verifyWorksheetExistsAndActive(
+  const worksheet = await verifyWorksheetExistsAndDraft(
     worksheetId,
     unitKerjaId,
   );
@@ -386,7 +386,7 @@ const remove = async (unitKerjaId, worksheetId, itemId, user) => {
   checkUnitKerjaAccess(user, unitKerjaId);
 
   // Verify worksheet exists and is ACTIVE
-  const worksheet = await verifyWorksheetExistsAndActive(
+  const worksheet = await verifyWorksheetExistsAndDraft(
     worksheetId,
     unitKerjaId,
   );

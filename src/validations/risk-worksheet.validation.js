@@ -31,13 +31,6 @@ export const createRiskWorksheetSchema = Joi.object({
   description: Joi.string().allow("", null).messages({
     "string.base": "Deskripsi harus berupa teks",
   }),
-
-  status: Joi.string()
-    .valid(...Object.values(RISK_WORKSHEET_STATUSES))
-    .default(RISK_WORKSHEET_STATUSES.INACTIVE)
-    .messages({
-      "any.only": `Status harus salah satu dari: ${Object.values(RISK_WORKSHEET_STATUSES).join(", ")}`,
-    }),
 });
 
 export const updateRiskWorksheetSchema = Joi.object({
@@ -78,5 +71,11 @@ export const searchRiskWorksheetSchema = Joi.object({
     "number.integer": "Limit harus berupa bilangan bulat",
     "number.min": "Limit minimal 1",
     "number.max": "Limit maksimal 100",
+  }),
+});
+
+export const approvalNotesSchema = Joi.object({
+  approvalNotes: Joi.string().allow("", null).messages({
+    "string.base": "Catatan persetujuan harus berupa teks",
   }),
 });

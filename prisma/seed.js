@@ -10,7 +10,6 @@ async function main() {
   console.log("🗑️ Menghapus data lama...");
   await prisma.riskMitigation.deleteMany({});
   await prisma.riskAssessmentItem.deleteMany({});
-  await prisma.riskAssessment.deleteMany({});
   await prisma.riskWorksheet.deleteMany({});
   await prisma.asset.deleteMany({});
   await prisma.assetCategory.deleteMany({});
@@ -562,68 +561,11 @@ async function main() {
   }
   console.log("✅ Assets berhasil di-seed\n");
 
-  // 7. Seed Risk Worksheets
+  // 7. Seed Risk Worksheets dengan berbagai status
   console.log("📑 Seeding Risk Worksheets...");
 
-  // Worksheet ACTIVE - Direktorat Pelayanan Publik
-  const worksheetActive = await prisma.riskWorksheet.create({
-    data: {
-      name: "Kertas Kerja Risiko Q1 2024",
-      description: "Kertas kerja untuk identifikasi risiko kuartal 1 tahun 2024",
-      status: "ACTIVE",
-      unitKerjaId: direktoratPelayananPublik.id,
-      konteksId: konteks5x5.id,
-      ownerId: pengelolaRisikoDitPP.id,
-    },
-  });
-  console.log(`   ✓ ${worksheetActive.name} (ACTIVE) - Dit PP`);
-
-  // Worksheet INACTIVE - Direktorat Pelayanan Publik
-  const worksheetInactive = await prisma.riskWorksheet.create({
-    data: {
-      name: "Kertas Kerja Risiko Draft",
-      description: "Draft kertas kerja yang belum difinalisasi",
-      status: "INACTIVE",
-      unitKerjaId: direktoratPelayananPublik.id,
-      konteksId: konteks5x5.id,
-      ownerId: pengelolaRisikoDitPP.id,
-    },
-  });
-  console.log(`   ✓ ${worksheetInactive.name} (INACTIVE) - Dit PP`);
-
-  // Worksheet ARCHIVED - Direktorat Pelayanan Publik
-  const worksheetArchived = await prisma.riskWorksheet.create({
-    data: {
-      name: "Kertas Kerja Risiko 2023",
-      description: "Kertas kerja risiko tahun 2023 yang sudah diarsipkan",
-      status: "ARCHIVED",
-      unitKerjaId: direktoratPelayananPublik.id,
-      konteksId: konteks5x5.id,
-      ownerId: pengelolaRisikoDitPP.id,
-    },
-  });
-  console.log(`   ✓ ${worksheetArchived.name} (ARCHIVED) - Dit PP`);
-
-  // Worksheet milik pengelola risiko kedua (untuk testing ownership)
-  const worksheetOtherOwner = await prisma.riskWorksheet.create({
-    data: {
-      name: "Kertas Kerja Risiko Layanan Online",
-      description: "Kertas kerja khusus untuk risiko layanan online",
-      status: "INACTIVE",
-      unitKerjaId: direktoratPelayananPublik.id,
-      konteksId: konteks5x5.id,
-      ownerId: pengelolaRisikoDitPP2.id,
-    },
-  });
-  console.log(`   ✓ ${worksheetOtherOwner.name} (INACTIVE, owner: ${pengelolaRisikoDitPP2.name}) - Dit PP`);
-
-  console.log("✅ Risk Worksheets berhasil di-seed\n");
-
-  // 8. Seed Risk Assessments
-  console.log("📋 Seeding Risk Assessments...");
-
   // Get risk categories for konteks 5x5
-  const riskCategoriesForAssessment = await prisma.riskCategory.findMany({
+  const riskCategoriesForWorksheet = await prisma.riskCategory.findMany({
     where: { konteksId: konteks5x5.id },
     orderBy: { order: "asc" },
   });
@@ -634,27 +576,27 @@ async function main() {
     take: 5,
   });
 
-  // Assessment DRAFT - belum submit
-  const assessmentDraft = await prisma.riskAssessment.create({
+  // Worksheet DRAFT - baru dibuat, bisa diedit
+  const worksheetDraft = await prisma.riskWorksheet.create({
     data: {
-      worksheetId: worksheetActive.id,
-      code: "RA-DIT-PP-001",
-      name: "Assessment Risiko Layanan Q1 2024",
-      description: "Assessment risiko untuk layanan publik kuartal 1 tahun 2024",
+      name: "Kertas Kerja Risiko Q1 2024",
+      description: "Kertas kerja untuk identifikasi risiko kuartal 1 tahun 2024",
       status: "DRAFT",
-      createdBy: pengelolaRisikoDitPP.id,
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
     },
   });
-  console.log(`   ✓ ${assessmentDraft.name} (DRAFT)`);
+  console.log(`   ✓ ${worksheetDraft.name} (DRAFT) - Dit PP`);
 
-  // Add items to DRAFT assessment
+  // Add items to DRAFT worksheet
   const draftItems = [
     {
       riskCode: "R001",
       riskName: "Gangguan Server Layanan Online",
       riskDescription: "Risiko terjadinya downtime pada server layanan online yang mengganggu pelayanan publik",
       assetId: assetsDitPP[0]?.id || null,
-      riskCategoryId: riskCategoriesForAssessment[1].id, // Risiko Operasional
+      riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
       inherentLikelihood: 3,
       inherentImpact: 4,
       inherentRiskLevel: "HIGH",
@@ -672,7 +614,7 @@ async function main() {
       riskName: "Kebocoran Data Pengaduan Masyarakat",
       riskDescription: "Risiko terjadinya kebocoran data sensitif pengaduan masyarakat",
       assetId: assetsDitPP[1]?.id || null,
-      riskCategoryId: riskCategoriesForAssessment[3].id, // Risiko Kepatuhan
+      riskCategoryId: riskCategoriesForWorksheet[3].id, // Risiko Kepatuhan
       inherentLikelihood: 2,
       inherentImpact: 5,
       inherentRiskLevel: "HIGH",
@@ -689,33 +631,33 @@ async function main() {
 
   for (const item of draftItems) {
     await prisma.riskAssessmentItem.create({
-      data: { ...item, assessmentId: assessmentDraft.id },
+      data: { ...item, worksheetId: worksheetDraft.id },
     });
   }
-  console.log(`   ✓ Added ${draftItems.length} items to DRAFT assessment`);
+  console.log(`   ✓ Added ${draftItems.length} items to DRAFT worksheet`);
 
-  // Assessment SUBMITTED - sudah diajukan, menunggu review
-  const assessmentSubmitted = await prisma.riskAssessment.create({
+  // Worksheet SUBMITTED - sudah diajukan, menunggu persetujuan KOMITE_PUSAT
+  const worksheetSubmitted = await prisma.riskWorksheet.create({
     data: {
-      worksheetId: worksheetActive.id,
-      code: "RA-DIT-PP-002",
-      name: "Assessment Risiko Infrastruktur 2024",
-      description: "Assessment risiko infrastruktur teknologi informasi",
+      name: "Kertas Kerja Risiko Infrastruktur 2024",
+      description: "Kertas kerja risiko infrastruktur teknologi informasi",
       status: "SUBMITTED",
-      createdBy: pengelolaRisikoDitPP.id,
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
       submittedAt: new Date(),
       submittedBy: pengelolaRisikoDitPP.id,
     },
   });
-  console.log(`   ✓ ${assessmentSubmitted.name} (SUBMITTED)`);
+  console.log(`   ✓ ${worksheetSubmitted.name} (SUBMITTED) - Dit PP`);
 
-  // Add items to SUBMITTED assessment
+  // Add items to SUBMITTED worksheet
   const submittedItems = [
     {
       riskCode: "R001",
       riskName: "Kegagalan Sistem Antrian",
       riskDescription: "Risiko kegagalan sistem antrian yang menyebabkan penumpukan antrian fisik",
-      riskCategoryId: riskCategoriesForAssessment[1].id,
+      riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 4,
       inherentImpact: 3,
       inherentRiskLevel: "HIGH",
@@ -732,7 +674,7 @@ async function main() {
       riskCode: "R002",
       riskName: "Keterlambatan Update Aplikasi",
       riskDescription: "Risiko keterlambatan update aplikasi yang menyebabkan vulnerability",
-      riskCategoryId: riskCategoriesForAssessment[1].id,
+      riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 3,
       inherentImpact: 3,
       inherentRiskLevel: "MEDIUM",
@@ -749,7 +691,7 @@ async function main() {
       riskCode: "R003",
       riskName: "Kerusakan Perangkat Loket",
       riskDescription: "Risiko kerusakan komputer atau printer di loket pelayanan",
-      riskCategoryId: riskCategoriesForAssessment[1].id,
+      riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 4,
       inherentImpact: 2,
       inherentRiskLevel: "MEDIUM",
@@ -766,36 +708,36 @@ async function main() {
 
   for (const item of submittedItems) {
     await prisma.riskAssessmentItem.create({
-      data: { ...item, assessmentId: assessmentSubmitted.id },
+      data: { ...item, worksheetId: worksheetSubmitted.id },
     });
   }
-  console.log(`   ✓ Added ${submittedItems.length} items to SUBMITTED assessment`);
+  console.log(`   ✓ Added ${submittedItems.length} items to SUBMITTED worksheet`);
 
-  // Assessment APPROVED - sudah disetujui
-  const assessmentApproved = await prisma.riskAssessment.create({
+  // Worksheet APPROVED - sudah disetujui oleh KOMITE_PUSAT
+  const worksheetApproved = await prisma.riskWorksheet.create({
     data: {
-      worksheetId: worksheetActive.id,
-      code: "RA-DIT-PP-003",
-      name: "Assessment Risiko SDM Pelayanan 2024",
-      description: "Assessment risiko sumber daya manusia di unit pelayanan",
+      name: "Kertas Kerja Risiko SDM Pelayanan 2024",
+      description: "Kertas kerja risiko sumber daya manusia di unit pelayanan",
       status: "APPROVED",
-      createdBy: pengelolaRisikoDitPP.id,
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
       submittedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       submittedBy: pengelolaRisikoDitPP.id,
-      reviewedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      reviewedBy: komitePusatDitPP.id,
-      reviewNotes: "Assessment sudah lengkap dan sesuai dengan standar manajemen risiko",
+      approvedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      approvedBy: komitePusatDitPP.id,
+      approvalNotes: "Kertas kerja sudah lengkap dan sesuai dengan standar manajemen risiko",
     },
   });
-  console.log(`   ✓ ${assessmentApproved.name} (APPROVED)`);
+  console.log(`   ✓ ${worksheetApproved.name} (APPROVED) - Dit PP`);
 
-  // Add items to APPROVED assessment
+  // Add items to APPROVED worksheet
   const approvedItems = [
     {
       riskCode: "R001",
       riskName: "Kekurangan Tenaga Customer Service",
       riskDescription: "Risiko kekurangan tenaga CS saat peak hour",
-      riskCategoryId: riskCategoriesForAssessment[1].id,
+      riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 4,
       inherentImpact: 3,
       inherentRiskLevel: "HIGH",
@@ -812,58 +754,38 @@ async function main() {
 
   for (const item of approvedItems) {
     await prisma.riskAssessmentItem.create({
-      data: { ...item, assessmentId: assessmentApproved.id },
+      data: { ...item, worksheetId: worksheetApproved.id },
     });
   }
-  console.log(`   ✓ Added ${approvedItems.length} items to APPROVED assessment`);
+  console.log(`   ✓ Added ${approvedItems.length} items to APPROVED worksheet`);
 
-  // Assessment REJECTED - ditolak, perlu revisi
-  const assessmentRejected = await prisma.riskAssessment.create({
+  // Worksheet ARCHIVED - diarsipkan
+  const worksheetArchived = await prisma.riskWorksheet.create({
     data: {
-      worksheetId: worksheetActive.id,
-      code: "RA-DIT-PP-004",
-      name: "Assessment Risiko Keuangan 2024",
-      description: "Assessment risiko pengelolaan keuangan",
-      status: "REJECTED",
-      createdBy: pengelolaRisikoDitPP.id,
-      submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      submittedBy: pengelolaRisikoDitPP.id,
-      reviewedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      reviewedBy: komitePusatDitPP.id,
-      reviewNotes: "Assessment kurang lengkap. Mohon tambahkan analisis kontrol yang lebih detail dan treatment rationale yang jelas untuk setiap risiko.",
+      name: "Kertas Kerja Risiko 2023",
+      description: "Kertas kerja risiko tahun 2023 yang sudah diarsipkan",
+      status: "ARCHIVED",
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP.id,
     },
   });
-  console.log(`   ✓ ${assessmentRejected.name} (REJECTED)`);
+  console.log(`   ✓ ${worksheetArchived.name} (ARCHIVED) - Dit PP`);
 
-  // Add items to REJECTED assessment
-  const rejectedItems = [
-    {
-      riskCode: "R001",
-      riskName: "Keterlambatan Pembayaran Vendor",
-      riskDescription: "Risiko keterlambatan pembayaran ke vendor",
-      riskCategoryId: riskCategoriesForAssessment[2].id, // Risiko Keuangan
-      inherentLikelihood: 3,
-      inherentImpact: 3,
-      inherentRiskLevel: "MEDIUM",
-      existingControls: null, // Kurang lengkap - alasan reject
-      controlEffectiveness: null,
-      residualLikelihood: 2,
-      residualImpact: 2,
-      residualRiskLevel: "LOW",
-      treatmentOption: null,
-      treatmentRationale: null,
-      order: 1,
+  // Worksheet milik pengelola risiko kedua (untuk testing ownership)
+  const worksheetOtherOwner = await prisma.riskWorksheet.create({
+    data: {
+      name: "Kertas Kerja Risiko Layanan Online",
+      description: "Kertas kerja khusus untuk risiko layanan online",
+      status: "DRAFT",
+      unitKerjaId: direktoratPelayananPublik.id,
+      konteksId: konteks5x5.id,
+      ownerId: pengelolaRisikoDitPP2.id,
     },
-  ];
+  });
+  console.log(`   ✓ ${worksheetOtherOwner.name} (DRAFT, owner: ${pengelolaRisikoDitPP2.name}) - Dit PP`);
 
-  for (const item of rejectedItems) {
-    await prisma.riskAssessmentItem.create({
-      data: { ...item, assessmentId: assessmentRejected.id },
-    });
-  }
-  console.log(`   ✓ Added ${rejectedItems.length} items to REJECTED assessment`);
-
-  console.log("✅ Risk Assessments berhasil di-seed\n");
+  console.log("✅ Risk Worksheets berhasil di-seed\n");
 
   // Summary
   console.log("📊 Summary:");
@@ -882,12 +804,11 @@ async function main() {
   const totalAssetCategories = await prisma.assetCategory.count();
   const totalAssets = await prisma.asset.count();
   const totalWorksheets = await prisma.riskWorksheet.count();
-  const totalAssessments = await prisma.riskAssessment.count();
-  const assessmentDraftCount = await prisma.riskAssessment.count({ where: { status: "DRAFT" } });
-  const assessmentSubmittedCount = await prisma.riskAssessment.count({ where: { status: "SUBMITTED" } });
-  const assessmentApprovedCount = await prisma.riskAssessment.count({ where: { status: "APPROVED" } });
-  const assessmentRejectedCount = await prisma.riskAssessment.count({ where: { status: "REJECTED" } });
-  const totalAssessmentItems = await prisma.riskAssessmentItem.count();
+  const worksheetDraftCount = await prisma.riskWorksheet.count({ where: { status: "DRAFT" } });
+  const worksheetSubmittedCount = await prisma.riskWorksheet.count({ where: { status: "SUBMITTED" } });
+  const worksheetApprovedCount = await prisma.riskWorksheet.count({ where: { status: "APPROVED" } });
+  const worksheetArchivedCount = await prisma.riskWorksheet.count({ where: { status: "ARCHIVED" } });
+  const totalItems = await prisma.riskAssessmentItem.count();
 
   console.log(`   • Total Roles: ${totalRoles}`);
   console.log(`   • Total Unit Kerja: ${totalUnitKerja}`);
@@ -900,9 +821,8 @@ async function main() {
   console.log(`   • Total Risk Matrices: ${totalRiskMatrices}`);
   console.log(`   • Total Asset Categories: ${totalAssetCategories}`);
   console.log(`   • Total Assets: ${totalAssets}`);
-  console.log(`   • Total Risk Worksheets: ${totalWorksheets}`);
-  console.log(`   • Total Risk Assessments: ${totalAssessments} (DRAFT: ${assessmentDraftCount}, SUBMITTED: ${assessmentSubmittedCount}, APPROVED: ${assessmentApprovedCount}, REJECTED: ${assessmentRejectedCount})`);
-  console.log(`   • Total Assessment Items: ${totalAssessmentItems}`);
+  console.log(`   • Total Risk Worksheets: ${totalWorksheets} (DRAFT: ${worksheetDraftCount}, SUBMITTED: ${worksheetSubmittedCount}, APPROVED: ${worksheetApprovedCount}, ARCHIVED: ${worksheetArchivedCount})`);
+  console.log(`   • Total Risk Assessment Items: ${totalItems}`);
 
   console.log("\n✅ Seeding selesai!");
   console.log("\n📝 Credentials untuk testing:");
@@ -927,11 +847,11 @@ async function main() {
   console.log("   • KMR-2026-3X3 (3x3) - INACTIVE - draft, bisa diedit");
   console.log("   • KMR-2022-4X4 (4x4) - ARCHIVED - tidak bisa diubah lagi");
   console.log("");
-  console.log("📝 Risk Assessment Status:");
-  console.log("   • RA-DIT-PP-001 - DRAFT - bisa diedit dan submit");
-  console.log("   • RA-DIT-PP-002 - SUBMITTED - menunggu review KOMITE_PUSAT");
-  console.log("   • RA-DIT-PP-003 - APPROVED - sudah disetujui");
-  console.log("   • RA-DIT-PP-004 - REJECTED - perlu revisi (bisa edit dan submit ulang)");
+  console.log("📝 Risk Worksheet Status:");
+  console.log("   • DRAFT - bisa diedit dan submit");
+  console.log("   • SUBMITTED - menunggu persetujuan KOMITE_PUSAT");
+  console.log("   • APPROVED - sudah disetujui, item terkunci");
+  console.log("   • ARCHIVED - diarsipkan");
 }
 
 main()
