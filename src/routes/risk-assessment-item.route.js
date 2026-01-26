@@ -1,7 +1,7 @@
 import riskAssessmentItemController from "../controllers/risk-assessment-item.controller.js";
 import { ROLES } from "../config/constant.js";
 
-const basePath = "/unit-kerja/:unitKerjaId/worksheets/:worksheetId/assessments/:assessmentId/items";
+const basePath = "/unit-kerja/:unitKerjaId/risk-worksheets/:worksheetId/items";
 
 export const riskAssessmentItemRoutes = [
   {

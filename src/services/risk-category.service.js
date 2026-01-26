@@ -1,7 +1,10 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
 import { validate } from "../utils/validator.utils.js";
-import { checkKonteksNotActive } from "../utils/konteks.utils.js";
+import {
+  checkKonteksNotActive,
+  verifyKonteksExists,
+} from "../utils/konteks.utils.js";
 import {
   createRiskCategorySchema,
   updateRiskCategorySchema,
@@ -42,7 +45,7 @@ const create = async (konteksId, reqBody) => {
   if (existingCategory) {
     throw new ResponseError(
       409,
-      `Nama kategori risiko "${reqBody.name}" sudah digunakan dalam konteks ini.`
+      `Nama kategori risiko "${reqBody.name}" sudah digunakan dalam konteks ini.`,
     );
   }
 
@@ -58,7 +61,7 @@ const create = async (konteksId, reqBody) => {
     if (existingOrder) {
       throw new ResponseError(
         409,
-        `Order ${reqBody.order} sudah digunakan oleh kategori risiko "${existingOrder.name}" dalam konteks ini.`
+        `Order ${reqBody.order} sudah digunakan oleh kategori risiko "${existingOrder.name}" dalam konteks ini.`,
       );
     }
   }
@@ -100,6 +103,9 @@ const search = async (konteksId, queryParams) => {
   const { konteksId: validatedKonteksId } = validate(konteksIdSchema, {
     konteksId,
   });
+
+  // cek konteks ada engga
+  await verifyKonteksExists(konteksId);
 
   // Validate query parameters
   const params = validate(searchRiskCategorySchema, queryParams);
@@ -242,7 +248,7 @@ const update = async (konteksId, id, reqBody) => {
     if (nameExists) {
       throw new ResponseError(
         409,
-        `Nama kategori risiko "${reqBody.name}" sudah digunakan dalam konteks ini.`
+        `Nama kategori risiko "${reqBody.name}" sudah digunakan dalam konteks ini.`,
       );
     }
   }
@@ -260,7 +266,7 @@ const update = async (konteksId, id, reqBody) => {
     if (existingOrder) {
       throw new ResponseError(
         409,
-        `Order ${reqBody.order} sudah digunakan oleh kategori risiko "${existingOrder.name}" dalam konteks ini.`
+        `Order ${reqBody.order} sudah digunakan oleh kategori risiko "${existingOrder.name}" dalam konteks ini.`,
       );
     }
   }

@@ -20,7 +20,7 @@ export const checkKonteksNotActive = async (konteksId, entityName = "data") => {
   if (konteks?.status === KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(
       403,
-      `Tidak dapat mengubah atau menghapus ${entityName} karena konteks "${konteks.name}" sedang aktif. Nonaktifkan konteks terlebih dahulu.`
+      `Tidak dapat mengubah atau menghapus ${entityName} karena konteks "${konteks.name}" sedang aktif. Nonaktifkan konteks terlebih dahulu.`,
     );
   }
 
@@ -28,7 +28,51 @@ export const checkKonteksNotActive = async (konteksId, entityName = "data") => {
   if (konteks?.status === KONTEKS_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      `Tidak dapat mengubah atau menghapus ${entityName} karena konteks "${konteks.name}" sudah diarsipkan.`
+      `Tidak dapat mengubah atau menghapus ${entityName} karena konteks "${konteks.name}" sudah diarsipkan.`,
     );
   }
+};
+
+/**
+ * Check kontek ada atau tidak
+ * Throws ResponseError if notfound 404
+ *
+ * @param {string} konteksId - The konteks ID to check
+ * @throws {ResponseError} 404 ifnot found
+ */
+export const verifyKonteksExists = async (konteksId) => {
+  const konteks = await prismaClient.konteks.findUnique({
+    where: { id: konteksId },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      matrixSize: true,
+      riskAppetiteLevel: true,
+      riskAppetiteDescription: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
+      _count: {
+        select: {
+          riskCategories: true,
+          riskMatrices: true,
+        },
+      },
+    },
+  });
+
+  if (!konteks) {
+    throw new ResponseError(
+      404,
+      `Konteks dengan ID ${konteksId} tidak ditemukan`,
+    );
+  }
+
+  return konteks;
 };

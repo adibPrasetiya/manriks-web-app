@@ -1,5 +1,9 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
+import {
+  RISK_LEVEL_HIERARCHY,
+  TREATMENT_OPTIONS,
+} from "../config/constant.js";
 
 /**
  * Get risk level from RiskMatrix based on likelihood and impact
@@ -100,4 +104,73 @@ export const verifyAssetExists = async (assetId, unitKerjaId) => {
   }
 
   return asset;
+};
+
+/**
+ * Compare two risk levels
+ * @param {string} level1 - First risk level
+ * @param {string} level2 - Second risk level
+ * @returns {number} negative if level1 < level2, 0 if equal, positive if level1 > level2
+ */
+export const compareRiskLevels = (level1, level2) => {
+  const index1 = RISK_LEVEL_HIERARCHY.indexOf(level1);
+  const index2 = RISK_LEVEL_HIERARCHY.indexOf(level2);
+  return index1 - index2;
+};
+
+/**
+ * Check if residual risk exceeds risk appetite
+ * @param {string} residualRiskLevel - The calculated residual risk level
+ * @param {string} riskAppetiteLevel - Risk appetite from konteks
+ * @returns {boolean} True if risk exceeds appetite
+ */
+export const isRiskAboveAppetite = (residualRiskLevel, riskAppetiteLevel) => {
+  if (!riskAppetiteLevel) return false;
+  return compareRiskLevels(residualRiskLevel, riskAppetiteLevel) > 0;
+};
+
+/**
+ * Get allowed treatment options based on risk appetite validation
+ * @param {string} residualRiskLevel - The calculated residual risk level
+ * @param {string} riskAppetiteLevel - Risk appetite from konteks
+ * @returns {string[]} Array of allowed treatment options
+ */
+export const getAllowedTreatmentOptions = (
+  residualRiskLevel,
+  riskAppetiteLevel
+) => {
+  if (isRiskAboveAppetite(residualRiskLevel, riskAppetiteLevel)) {
+    // Only MITIGATE or TRANSFER allowed when risk exceeds appetite
+    return [TREATMENT_OPTIONS.MITIGATE, TREATMENT_OPTIONS.TRANSFER];
+  }
+  // All options allowed when within appetite
+  return Object.values(TREATMENT_OPTIONS);
+};
+
+/**
+ * Validate treatment option against risk appetite
+ * @param {string} treatmentOption - The selected treatment option
+ * @param {string} residualRiskLevel - The calculated residual risk level
+ * @param {string} riskAppetiteLevel - Risk appetite from konteks
+ * @throws {ResponseError} if treatment option is not allowed
+ */
+export const validateTreatmentOption = (
+  treatmentOption,
+  residualRiskLevel,
+  riskAppetiteLevel
+) => {
+  if (!treatmentOption) return; // No treatment option to validate
+  if (!riskAppetiteLevel) return; // No appetite defined, skip validation
+
+  const allowedOptions = getAllowedTreatmentOptions(
+    residualRiskLevel,
+    riskAppetiteLevel
+  );
+
+  if (!allowedOptions.includes(treatmentOption)) {
+    throw new ResponseError(
+      400,
+      `Treatment option "${treatmentOption}" tidak diizinkan. Risiko residual (${residualRiskLevel}) melebihi risk appetite (${riskAppetiteLevel}). Hanya MITIGATE atau TRANSFER yang diizinkan.`
+    );
+  }
 };

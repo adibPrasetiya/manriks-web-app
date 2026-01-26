@@ -1,10 +1,20 @@
 import Joi from "joi";
-import { CONTROL_EFFECTIVENESS, TREATMENT_OPTIONS } from "../config/constant.js";
+import {
+  CONTROL_EFFECTIVENESS,
+  TREATMENT_OPTIONS,
+} from "../config/constant.js";
 
-export const assessmentIdSchema = Joi.object({
-  assessmentId: Joi.string().required().messages({
-    "string.empty": "ID assessment tidak boleh kosong",
-    "any.required": "ID assessment wajib diisi",
+export const unitKerjaIdSchema = Joi.object({
+  unitKerjaId: Joi.string().required().messages({
+    "string.empty": "ID unit kerja tidak boleh kosong",
+    "any.required": "ID unit kerja wajib diisi",
+  }),
+});
+
+export const worksheetIdSchema = Joi.object({
+  worksheetId: Joi.string().required().messages({
+    "string.empty": "ID kertas kerja tidak boleh kosong",
+    "any.required": "ID kertas kerja wajib diisi",
   }),
 });
 
@@ -27,7 +37,7 @@ export const createRiskAssessmentItemSchema = Joi.object({
     "string.base": "Deskripsi risiko harus berupa teks",
   }),
 
-  assetId: Joi.string().allow(null).messages({
+  assetId: Joi.string().required().messages({
     "string.base": "ID aset harus berupa string",
   }),
 
@@ -102,10 +112,6 @@ export const updateRiskAssessmentItemSchema = Joi.object({
 
   riskDescription: Joi.string().allow("", null).messages({
     "string.base": "Deskripsi risiko harus berupa teks",
-  }),
-
-  assetId: Joi.string().allow(null).messages({
-    "string.base": "ID aset harus berupa string",
   }),
 
   inherentLikelihood: Joi.number().integer().min(1).messages({

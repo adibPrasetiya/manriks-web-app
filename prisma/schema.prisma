@@ -149,15 +149,6 @@ enum RiskWorksheetStatus {
   ARCHIVED
 }
 
-enum RiskAssessmentStatus {
-  DRAFT
-  SUBMITTED
-  IN_REVIEW
-  APPROVED
-  REJECTED
-  ARCHIVED
-}
-
 enum MitigationStatus {
   PLANNED
   IN_PROGRESS
@@ -371,7 +362,7 @@ model RiskWorksheet {
   updatedAt DateTime @updatedAt
 
   // Relations
-  riskAssessments RiskAssessment[]
+  riskAssessmentItems RiskAssessmentItem[]
 
   @@unique([unitKerjaId, konteksId, name])
   @@index([unitKerjaId])
@@ -381,51 +372,10 @@ model RiskWorksheet {
   @@map("risk_worksheets")
 }
 
-model RiskAssessment {
+model RiskAssessmentItem {
   id          String        @id @default(cuid())
   worksheetId String
-  worksheet   RiskWorksheet @relation(fields: [worksheetId], references: [id], onDelete: Restrict)
-
-  code           String   @db.VarChar(100)
-  name           String   @db.VarChar(255)
-  description    String?  @db.Text
-  assessmentDate DateTime @default(now())
-
-  status RiskAssessmentStatus @default(DRAFT)
-
-  // Audit trail
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy String
-  updatedBy String?
-
-  // Submission tracking
-  submittedAt DateTime?
-  submittedBy String?
-
-  // Review tracking (KOMITE_PUSAT)
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  reviewNotes String?   @db.Text
-
-  // Relations
-  items RiskAssessmentItem[]
-
-  // Extensibility
-  metadata Json?
-
-  @@unique([worksheetId, code])
-  @@index([worksheetId])
-  @@index([status])
-  @@index([createdBy])
-  @@index([createdAt])
-  @@map("risk_assessments")
-}
-
-model RiskAssessmentItem {
-  id           String         @id @default(cuid())
-  assessmentId String
-  assessment   RiskAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  worksheet   RiskWorksheet @relation(fields: [worksheetId], references: [id], onDelete: Cascade)
 
   riskCode        String  @db.VarChar(50)
   riskName        String  @db.VarChar(255)
@@ -462,8 +412,8 @@ model RiskAssessmentItem {
   // Extensibility
   metadata Json?
 
-  @@unique([assessmentId, riskCode])
-  @@index([assessmentId])
+  @@unique([worksheetId, riskCode])
+  @@index([worksheetId])
   @@index([riskCategoryId])
   @@index([assetId])
   @@index([inherentRiskLevel])

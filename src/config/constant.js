@@ -29,14 +29,15 @@ export const RISK_WORKSHEET_STATUSES = {
   ARCHIVED: "ARCHIVED",
 };
 
-export const RISK_ASSESSMENT_STATUSES = {
-  DRAFT: "DRAFT",
-  SUBMITTED: "SUBMITTED",
-  IN_REVIEW: "IN_REVIEW",
-  APPROVED: "APPROVED",
-  REJECTED: "REJECTED",
-  ARCHIVED: "ARCHIVED",
+export const RISK_LEVELS = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+  CRITICAL: "CRITICAL",
 };
+
+// Hirarki untuk perbandingan (index = severity, semakin tinggi = semakin buruk)
+export const RISK_LEVEL_HIERARCHY = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 export const MITIGATION_STATUSES = {
   PLANNED: "PLANNED",

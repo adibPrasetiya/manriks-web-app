@@ -5,7 +5,6 @@ const create = async (req, res, next) => {
     const result = await riskAssessmentItemService.create(
       req.params.unitKerjaId,
       req.params.worksheetId,
-      req.params.assessmentId,
       req.body,
       req.user
     );
@@ -23,7 +22,6 @@ const search = async (req, res, next) => {
     const result = await riskAssessmentItemService.search(
       req.params.unitKerjaId,
       req.params.worksheetId,
-      req.params.assessmentId,
       req.query,
       req.user
     );
@@ -42,7 +40,6 @@ const getById = async (req, res, next) => {
     const result = await riskAssessmentItemService.getById(
       req.params.unitKerjaId,
       req.params.worksheetId,
-      req.params.assessmentId,
       req.params.itemId,
       req.user
     );
@@ -60,7 +57,6 @@ const update = async (req, res, next) => {
     const result = await riskAssessmentItemService.update(
       req.params.unitKerjaId,
       req.params.worksheetId,
-      req.params.assessmentId,
       req.params.itemId,
       req.body,
       req.user
@@ -79,7 +75,6 @@ const remove = async (req, res, next) => {
     const result = await riskAssessmentItemService.remove(
       req.params.unitKerjaId,
       req.params.worksheetId,
-      req.params.assessmentId,
       req.params.itemId,
       req.user
     );

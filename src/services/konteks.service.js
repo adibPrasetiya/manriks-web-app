@@ -8,6 +8,7 @@ import {
 } from "../validations/konteks.validation.js";
 import { ResponseError } from "../errors/response.error.js";
 import { KONTEKS_STATUSES } from "../config/constant.js";
+import { verifyKonteksExists } from "../utils/konteks.utils.js";
 
 const create = async (reqBody, userId) => {
   reqBody = validate(createKonteksSchema, reqBody);
@@ -20,7 +21,7 @@ const create = async (reqBody, userId) => {
   if (existingCode) {
     throw new ResponseError(
       409,
-      `Kode konteks ${reqBody.code} sudah digunakan.`
+      `Kode konteks ${reqBody.code} sudah digunakan.`,
     );
   }
 
@@ -141,35 +142,7 @@ const search = async (queryParams) => {
 const getById = async (konteksId) => {
   const { konteksId: id } = validate(konteksIdSchema, { konteksId });
 
-  const konteks = await prismaClient.konteks.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      description: true,
-      periodStart: true,
-      periodEnd: true,
-      matrixSize: true,
-      riskAppetiteLevel: true,
-      riskAppetiteDescription: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      createdBy: true,
-      updatedBy: true,
-      _count: {
-        select: {
-          riskCategories: true,
-          riskMatrices: true,
-        },
-      },
-    },
-  });
-
-  if (!konteks) {
-    throw new ResponseError(404, "Konteks tidak ditemukan.");
-  }
+  const konteks = await verifyKonteksExists(konteksId);
 
   return {
     message: "Konteks berhasil ditemukan",
@@ -181,19 +154,13 @@ const update = async (konteksId, reqBody, userId) => {
   const { konteksId: id } = validate(konteksIdSchema, { konteksId });
   reqBody = validate(updateKonteksSchema, reqBody);
 
-  const existingKonteks = await prismaClient.konteks.findUnique({
-    where: { id },
-  });
-
-  if (!existingKonteks) {
-    throw new ResponseError(404, "Konteks tidak ditemukan.");
-  }
+  const existingKonteks = await verifyKonteksExists(konteksId);
 
   // Check if konteks is active - prevent editing active konteks
   if (existingKonteks.status === KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(
       403,
-      "Tidak dapat mengubah konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu."
+      "Tidak dapat mengubah konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu.",
     );
   }
 
@@ -201,7 +168,7 @@ const update = async (konteksId, reqBody, userId) => {
   if (existingKonteks.status === KONTEKS_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengubah konteks yang sudah diarsipkan."
+      "Tidak dapat mengubah konteks yang sudah diarsipkan.",
     );
   }
 
@@ -227,7 +194,7 @@ const update = async (konteksId, reqBody, userId) => {
     if (scalesCount > 0 || impactScalesCount > 0) {
       throw new ResponseError(
         400,
-        "Ukuran matriks tidak dapat diubah karena sudah ada likelihood scale atau impact scale yang dibuat."
+        "Ukuran matriks tidak dapat diubah karena sudah ada likelihood scale atau impact scale yang dibuat.",
       );
     }
   }
@@ -290,7 +257,7 @@ const setActive = async (konteksId, userId) => {
   if (konteks.status === KONTEKS_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengaktifkan konteks yang sudah diarsipkan."
+      "Tidak dapat mengaktifkan konteks yang sudah diarsipkan.",
     );
   }
 
@@ -298,7 +265,7 @@ const setActive = async (konteksId, userId) => {
   if (konteks.riskCategories.length === 0) {
     throw new ResponseError(
       400,
-      "Konteks harus memiliki minimal 1 kategori risiko sebelum diaktifkan."
+      "Konteks harus memiliki minimal 1 kategori risiko sebelum diaktifkan.",
     );
   }
 
@@ -307,13 +274,13 @@ const setActive = async (konteksId, userId) => {
     if (category.likelihoodScales.length !== konteks.matrixSize) {
       throw new ResponseError(
         400,
-        `Kategori "${category.name}" harus memiliki ${konteks.matrixSize} likelihood scale (saat ini: ${category.likelihoodScales.length}).`
+        `Kategori "${category.name}" harus memiliki ${konteks.matrixSize} likelihood scale (saat ini: ${category.likelihoodScales.length}).`,
       );
     }
     if (category.impactScales.length !== konteks.matrixSize) {
       throw new ResponseError(
         400,
-        `Kategori "${category.name}" harus memiliki ${konteks.matrixSize} impact scale (saat ini: ${category.impactScales.length}).`
+        `Kategori "${category.name}" harus memiliki ${konteks.matrixSize} impact scale (saat ini: ${category.impactScales.length}).`,
       );
     }
   }
@@ -323,7 +290,7 @@ const setActive = async (konteksId, userId) => {
   if (konteks.riskMatrices.length !== expectedMatrixEntries) {
     throw new ResponseError(
       400,
-      `Risk matrix harus lengkap (${expectedMatrixEntries} entries untuk matriks ${konteks.matrixSize}x${konteks.matrixSize}, saat ini: ${konteks.riskMatrices.length}).`
+      `Risk matrix harus lengkap (${expectedMatrixEntries} entries untuk matriks ${konteks.matrixSize}x${konteks.matrixSize}, saat ini: ${konteks.riskMatrices.length}).`,
     );
   }
 
@@ -379,7 +346,7 @@ const deactivate = async (konteksId, userId) => {
   if (konteks.status === KONTEKS_STATUSES.ARCHIVED) {
     throw new ResponseError(
       400,
-      "Tidak dapat menonaktifkan konteks yang sudah diarsipkan."
+      "Tidak dapat menonaktifkan konteks yang sudah diarsipkan.",
     );
   }
 
@@ -420,7 +387,7 @@ const archive = async (konteksId, userId) => {
   if (konteks.status === KONTEKS_STATUSES.ACTIVE) {
     throw new ResponseError(
       400,
-      "Tidak dapat mengarsipkan konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu."
+      "Tidak dapat mengarsipkan konteks yang sedang aktif. Nonaktifkan konteks terlebih dahulu.",
     );
   }
 

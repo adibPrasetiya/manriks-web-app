@@ -5,30 +5,29 @@ import {
   checkUnitKerjaAccess,
   verifyUnitKerjaExists,
   verifyWorksheetExists,
-  verifyAssessmentExists,
-  checkAssessmentEditable,
-  checkAssessmentOwnership,
+  verifyWorksheetExistsAndActive,
+  checkWorksheetOwnership,
+  generateRiskItemCode,
 } from "../utils/risk-assessment.utils.js";
 import {
   getRiskLevelFromMatrix,
   validateLikelihoodImpact,
   verifyRiskCategoryExists,
   verifyAssetExists,
+  validateTreatmentOption,
 } from "../utils/risk-calculation.utils.js";
 import {
   unitKerjaIdSchema,
   worksheetIdSchema,
-} from "../validations/risk-assessment.validation.js";
-import {
   createRiskAssessmentItemSchema,
   updateRiskAssessmentItemSchema,
   searchRiskAssessmentItemSchema,
-  assessmentIdSchema,
   itemIdSchema,
 } from "../validations/risk-assessment-item.validation.js";
 
 const itemSelect = {
   id: true,
+  worksheetId: true,
   riskCode: true,
   riskName: true,
   riskDescription: true,
@@ -49,18 +48,7 @@ const itemSelect = {
   updatedAt: true,
 };
 
-/**
- * Generate risk code - Format: R{SEQUENCE}
- */
-const generateRiskCode = async (assessmentId) => {
-  const count = await prismaClient.riskAssessmentItem.count({
-    where: { assessmentId },
-  });
-  const sequence = String(count + 1).padStart(3, "0");
-  return `R${sequence}`;
-};
-
-const create = async (unitKerjaId, worksheetId, assessmentId, reqBody, user) => {
+const create = async (unitKerjaId, worksheetId, reqBody, user) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -68,64 +56,73 @@ const create = async (unitKerjaId, worksheetId, assessmentId, reqBody, user) => 
   const worksheetParams = validate(worksheetIdSchema, { worksheetId });
   worksheetId = worksheetParams.worksheetId;
 
-  const assessmentParams = validate(assessmentIdSchema, { assessmentId });
-  assessmentId = assessmentParams.assessmentId;
-
   // Check unit kerja access
   checkUnitKerjaAccess(user, unitKerjaId);
 
   // Verify unit kerja exists
   await verifyUnitKerjaExists(unitKerjaId);
 
-  // Verify worksheet exists
-  const worksheet = await verifyWorksheetExists(worksheetId, unitKerjaId);
+  // Verify worksheet exists and is ACTIVE
+  const worksheet = await verifyWorksheetExistsAndActive(
+    worksheetId,
+    unitKerjaId,
+  );
 
-  // Verify assessment exists
-  const assessment = await verifyAssessmentExists(assessmentId, worksheetId);
-
-  // Check if editable
-  checkAssessmentEditable(assessment);
-
-  // Check ownership
-  checkAssessmentOwnership(assessment, user.userId, "menambah item risiko");
+  // Check worksheet ownership
+  checkWorksheetOwnership(worksheet, user.userId, "menambah item risiko");
 
   // Validate request body
   reqBody = validate(createRiskAssessmentItemSchema, reqBody);
 
-  const matrixSize = worksheet.konteks.matrixSize;
-  const konteksId = worksheet.konteks.id;
+  const { konteks, unitKerja } = worksheet;
+  const { matrixSize, riskAppetiteLevel } = konteks;
 
   // Validate likelihood and impact values
-  validateLikelihoodImpact(matrixSize, reqBody.inherentLikelihood, reqBody.inherentImpact);
-  validateLikelihoodImpact(matrixSize, reqBody.residualLikelihood, reqBody.residualImpact);
+  validateLikelihoodImpact(
+    matrixSize,
+    reqBody.inherentLikelihood,
+    reqBody.inherentImpact,
+  );
+  validateLikelihoodImpact(
+    matrixSize,
+    reqBody.residualLikelihood,
+    reqBody.residualImpact,
+  );
 
-  // Verify risk category
-  await verifyRiskCategoryExists(reqBody.riskCategoryId, konteksId);
+  // Verify risk category belongs to konteks
+  await verifyRiskCategoryExists(reqBody.riskCategoryId, konteks.id);
 
   // Verify asset if provided
   if (reqBody.assetId) {
     await verifyAssetExists(reqBody.assetId, unitKerjaId);
   }
 
-  // Calculate risk levels
+  // Calculate risk levels from matrix
   const inherentRiskLevel = await getRiskLevelFromMatrix(
-    konteksId,
+    konteks.id,
     reqBody.inherentLikelihood,
-    reqBody.inherentImpact
+    reqBody.inherentImpact,
   );
   const residualRiskLevel = await getRiskLevelFromMatrix(
-    konteksId,
+    konteks.id,
     reqBody.residualLikelihood,
-    reqBody.residualImpact
+    reqBody.residualImpact,
+  );
+
+  // Validate treatment option against risk appetite
+  validateTreatmentOption(
+    reqBody.treatmentOption,
+    residualRiskLevel,
+    riskAppetiteLevel,
   );
 
   // Generate risk code
-  const riskCode = await generateRiskCode(assessmentId);
+  const riskCode = await generateRiskItemCode(worksheetId);
 
   // Create item
   const item = await prismaClient.riskAssessmentItem.create({
     data: {
-      assessmentId,
+      worksheetId,
       riskCode,
       riskName: reqBody.riskName,
       riskDescription: reqBody.riskDescription || null,
@@ -152,7 +149,7 @@ const create = async (unitKerjaId, worksheetId, assessmentId, reqBody, user) => 
   };
 };
 
-const search = async (unitKerjaId, worksheetId, assessmentId, queryParams, user) => {
+const search = async (unitKerjaId, worksheetId, queryParams, user) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -160,20 +157,27 @@ const search = async (unitKerjaId, worksheetId, assessmentId, queryParams, user)
   const worksheetParams = validate(worksheetIdSchema, { worksheetId });
   worksheetId = worksheetParams.worksheetId;
 
-  const assessmentParams = validate(assessmentIdSchema, { assessmentId });
-  assessmentId = assessmentParams.assessmentId;
+  //check unit kerja ada
+  await verifyUnitKerjaExists(unitKerjaId);
 
   // Check unit kerja access (allow KOMITE_PUSAT)
   checkUnitKerjaAccess(user, unitKerjaId, { allowKomitePusat: true });
 
-  // Verify assessment exists
-  await verifyAssessmentExists(assessmentId, worksheetId);
+  // Verify worksheet exists
+  await verifyWorksheetExists(worksheetId, unitKerjaId);
 
   // Validate query params
   const params = validate(searchRiskAssessmentItemSchema, queryParams);
-  const { riskName, riskCategoryId, inherentRiskLevel, residualRiskLevel, page, limit } = params;
+  const {
+    riskName,
+    riskCategoryId,
+    inherentRiskLevel,
+    residualRiskLevel,
+    page,
+    limit,
+  } = params;
 
-  const where = { assessmentId };
+  const where = { worksheetId };
 
   if (riskName) {
     where.riskName = { contains: riskName };
@@ -219,7 +223,7 @@ const search = async (unitKerjaId, worksheetId, assessmentId, queryParams, user)
   };
 };
 
-const getById = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => {
+const getById = async (unitKerjaId, worksheetId, itemId, user) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -227,16 +231,13 @@ const getById = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => 
   const worksheetParams = validate(worksheetIdSchema, { worksheetId });
   worksheetId = worksheetParams.worksheetId;
 
-  const assessmentParams = validate(assessmentIdSchema, { assessmentId });
-  assessmentId = assessmentParams.assessmentId;
-
   const itemParams = validate(itemIdSchema, { itemId });
 
   // Check unit kerja access (allow KOMITE_PUSAT)
   checkUnitKerjaAccess(user, unitKerjaId, { allowKomitePusat: true });
 
-  // Verify assessment exists
-  await verifyAssessmentExists(assessmentId, worksheetId);
+  // Verify worksheet exists
+  await verifyWorksheetExists(worksheetId, unitKerjaId);
 
   // Get item
   const item = await prismaClient.riskAssessmentItem.findUnique({
@@ -248,7 +249,7 @@ const getById = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => 
     throw new ResponseError(404, "Item risiko tidak ditemukan.");
   }
 
-  if (item.assessmentId !== assessmentId) {
+  if (item.worksheetId !== worksheetId) {
     throw new ResponseError(404, "Item risiko tidak ditemukan.");
   }
 
@@ -258,7 +259,7 @@ const getById = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => 
   };
 };
 
-const update = async (unitKerjaId, worksheetId, assessmentId, itemId, reqBody, user) => {
+const update = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -266,25 +267,19 @@ const update = async (unitKerjaId, worksheetId, assessmentId, itemId, reqBody, u
   const worksheetParams = validate(worksheetIdSchema, { worksheetId });
   worksheetId = worksheetParams.worksheetId;
 
-  const assessmentParams = validate(assessmentIdSchema, { assessmentId });
-  assessmentId = assessmentParams.assessmentId;
-
   const itemParams = validate(itemIdSchema, { itemId });
 
   // Check unit kerja access
   checkUnitKerjaAccess(user, unitKerjaId);
 
-  // Verify worksheet exists
-  const worksheet = await verifyWorksheetExists(worksheetId, unitKerjaId);
+  // Verify worksheet exists and is ACTIVE
+  const worksheet = await verifyWorksheetExistsAndActive(
+    worksheetId,
+    unitKerjaId,
+  );
 
-  // Verify assessment exists
-  const assessment = await verifyAssessmentExists(assessmentId, worksheetId);
-
-  // Check if editable
-  checkAssessmentEditable(assessment);
-
-  // Check ownership
-  checkAssessmentOwnership(assessment, user.userId, "mengubah item risiko");
+  // Check worksheet ownership
+  checkWorksheetOwnership(worksheet, user.userId, "mengubah item risiko");
 
   // Validate request body
   reqBody = validate(updateRiskAssessmentItemSchema, reqBody);
@@ -298,40 +293,65 @@ const update = async (unitKerjaId, worksheetId, assessmentId, itemId, reqBody, u
     throw new ResponseError(404, "Item risiko tidak ditemukan.");
   }
 
-  if (existingItem.assessmentId !== assessmentId) {
+  if (existingItem.worksheetId !== worksheetId) {
     throw new ResponseError(404, "Item risiko tidak ditemukan.");
   }
 
-  const matrixSize = worksheet.konteks.matrixSize;
-  const konteksId = worksheet.konteks.id;
+  const { konteks } = worksheet;
+  const { matrixSize, riskAppetiteLevel } = konteks;
 
   // Prepare update data
   const updateData = { ...reqBody };
 
   // Validate and recalculate inherent risk level if likelihood/impact changed
-  const inherentLikelihood = reqBody.inherentLikelihood ?? existingItem.inherentLikelihood;
+  const inherentLikelihood =
+    reqBody.inherentLikelihood ?? existingItem.inherentLikelihood;
   const inherentImpact = reqBody.inherentImpact ?? existingItem.inherentImpact;
 
-  if (reqBody.inherentLikelihood !== undefined || reqBody.inherentImpact !== undefined) {
+  if (
+    reqBody.inherentLikelihood !== undefined ||
+    reqBody.inherentImpact !== undefined
+  ) {
     validateLikelihoodImpact(matrixSize, inherentLikelihood, inherentImpact);
     updateData.inherentRiskLevel = await getRiskLevelFromMatrix(
-      konteksId,
+      konteks.id,
       inherentLikelihood,
-      inherentImpact
+      inherentImpact,
     );
   }
 
   // Validate and recalculate residual risk level if likelihood/impact changed
-  const residualLikelihood = reqBody.residualLikelihood ?? existingItem.residualLikelihood;
+  const residualLikelihood =
+    reqBody.residualLikelihood ?? existingItem.residualLikelihood;
   const residualImpact = reqBody.residualImpact ?? existingItem.residualImpact;
 
-  if (reqBody.residualLikelihood !== undefined || reqBody.residualImpact !== undefined) {
+  let residualRiskLevel = existingItem.residualRiskLevel;
+
+  if (
+    reqBody.residualLikelihood !== undefined ||
+    reqBody.residualImpact !== undefined
+  ) {
     validateLikelihoodImpact(matrixSize, residualLikelihood, residualImpact);
-    updateData.residualRiskLevel = await getRiskLevelFromMatrix(
-      konteksId,
+    residualRiskLevel = await getRiskLevelFromMatrix(
+      konteks.id,
       residualLikelihood,
-      residualImpact
+      residualImpact,
     );
+    updateData.residualRiskLevel = residualRiskLevel;
+  }
+
+  // Validate treatment option against risk appetite
+  const treatmentOption =
+    reqBody.treatmentOption ?? existingItem.treatmentOption;
+  validateTreatmentOption(
+    treatmentOption,
+    residualRiskLevel,
+    riskAppetiteLevel,
+  );
+
+  // Verify risk category if changed
+  if (reqBody.riskCategoryId !== undefined) {
+    await verifyRiskCategoryExists(reqBody.riskCategoryId, konteks.id);
   }
 
   // Verify asset if provided
@@ -352,7 +372,7 @@ const update = async (unitKerjaId, worksheetId, assessmentId, itemId, reqBody, u
   };
 };
 
-const remove = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => {
+const remove = async (unitKerjaId, worksheetId, itemId, user) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -360,22 +380,19 @@ const remove = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => {
   const worksheetParams = validate(worksheetIdSchema, { worksheetId });
   worksheetId = worksheetParams.worksheetId;
 
-  const assessmentParams = validate(assessmentIdSchema, { assessmentId });
-  assessmentId = assessmentParams.assessmentId;
-
   const itemParams = validate(itemIdSchema, { itemId });
 
   // Check unit kerja access
   checkUnitKerjaAccess(user, unitKerjaId);
 
-  // Verify assessment exists
-  const assessment = await verifyAssessmentExists(assessmentId, worksheetId);
+  // Verify worksheet exists and is ACTIVE
+  const worksheet = await verifyWorksheetExistsAndActive(
+    worksheetId,
+    unitKerjaId,
+  );
 
-  // Check if editable
-  checkAssessmentEditable(assessment);
-
-  // Check ownership
-  checkAssessmentOwnership(assessment, user.userId, "menghapus item risiko");
+  // Check worksheet ownership
+  checkWorksheetOwnership(worksheet, user.userId, "menghapus item risiko");
 
   // Get existing item
   const existingItem = await prismaClient.riskAssessmentItem.findUnique({
@@ -386,7 +403,7 @@ const remove = async (unitKerjaId, worksheetId, assessmentId, itemId, user) => {
     throw new ResponseError(404, "Item risiko tidak ditemukan.");
   }
 
-  if (existingItem.assessmentId !== assessmentId) {
+  if (existingItem.worksheetId !== worksheetId) {
     throw new ResponseError(404, "Item risiko tidak ditemukan.");
   }
 

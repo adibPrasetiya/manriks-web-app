@@ -13,7 +13,6 @@ import { sessionRoutes } from "./session.route.js";
 import { assetCategoryRoutes } from "./asset-category.route.js";
 import { assetRoutes } from "./asset.route.js";
 import { riskWorksheetRoutes } from "./risk-worksheet.route.js";
-import { riskAssessmentRoutes } from "./risk-assessment.route.js";
 import { riskAssessmentItemRoutes } from "./risk-assessment-item.route.js";
 
 export const protectedRoute = Router();
@@ -32,7 +31,6 @@ const routes = [
   ...assetCategoryRoutes,
   ...assetRoutes,
   ...riskWorksheetRoutes,
-  ...riskAssessmentRoutes,
   ...riskAssessmentItemRoutes,
 ];
 

@@ -1,10 +1,6 @@
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
-import {
-  RISK_WORKSHEET_STATUSES,
-  RISK_ASSESSMENT_STATUSES,
-  ROLES,
-} from "../config/constant.js";
+import { RISK_WORKSHEET_STATUSES } from "../config/constant.js";
 
 // Re-export common functions from risk-worksheet.utils.js
 export {
@@ -14,9 +10,12 @@ export {
 
 /**
  * Verify worksheet exists, is active, and belongs to the unit kerja
- * Used when creating new assessment
+ * Used when creating new risk assessment item
  */
-export const verifyWorksheetExistsAndActive = async (worksheetId, unitKerjaId) => {
+export const verifyWorksheetExistsAndActive = async (
+  worksheetId,
+  unitKerjaId
+) => {
   const worksheet = await prismaClient.riskWorksheet.findUnique({
     where: { id: worksheetId },
     include: {
@@ -28,6 +27,7 @@ export const verifyWorksheetExistsAndActive = async (worksheetId, unitKerjaId) =
           matrixSize: true,
           periodStart: true,
           periodEnd: true,
+          riskAppetiteLevel: true,
         },
       },
       unitKerja: {
@@ -47,7 +47,7 @@ export const verifyWorksheetExistsAndActive = async (worksheetId, unitKerjaId) =
   if (worksheet.status !== RISK_WORKSHEET_STATUSES.ACTIVE) {
     throw new ResponseError(
       400,
-      "Kertas kerja risiko tidak aktif. Hanya dapat membuat assessment untuk kertas kerja yang aktif."
+      "Kertas kerja risiko tidak aktif. Hanya dapat menambah item risiko untuk kertas kerja yang aktif."
     );
   }
 
@@ -62,7 +62,13 @@ export const verifyWorksheetExists = async (worksheetId, unitKerjaId) => {
     where: { id: worksheetId },
     include: {
       konteks: {
-        select: { id: true, name: true, code: true, matrixSize: true },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          matrixSize: true,
+          riskAppetiteLevel: true,
+        },
       },
       unitKerja: {
         select: { id: true, name: true, code: true },
@@ -82,85 +88,28 @@ export const verifyWorksheetExists = async (worksheetId, unitKerjaId) => {
 };
 
 /**
- * Verify assessment exists and belongs to the worksheet
+ * Check if user is the owner of the worksheet
  */
-export const verifyAssessmentExists = async (assessmentId, worksheetId) => {
-  const assessment = await prismaClient.riskAssessment.findUnique({
-    where: { id: assessmentId },
-    include: {
-      worksheet: {
-        include: {
-          konteks: {
-            select: { id: true, name: true, code: true, matrixSize: true },
-          },
-          unitKerja: {
-            select: { id: true, name: true, code: true },
-          },
-        },
-      },
-      _count: { select: { items: true } },
-    },
-  });
-
-  if (!assessment) {
-    throw new ResponseError(404, "Risk assessment tidak ditemukan.");
-  }
-
-  if (assessment.worksheetId !== worksheetId) {
-    throw new ResponseError(404, "Risk assessment tidak ditemukan.");
-  }
-
-  return assessment;
-};
-
-/**
- * Check if assessment is editable (DRAFT or REJECTED status)
- */
-export const checkAssessmentEditable = (assessment) => {
-  const editableStatuses = [
-    RISK_ASSESSMENT_STATUSES.DRAFT,
-    RISK_ASSESSMENT_STATUSES.REJECTED,
-  ];
-
-  if (!editableStatuses.includes(assessment.status)) {
-    throw new ResponseError(
-      400,
-      `Tidak dapat mengubah assessment dengan status ${assessment.status}.`
-    );
-  }
-};
-
-/**
- * Check if user is the creator of the assessment
- */
-export const checkAssessmentOwnership = (assessment, userId, action = "mengubah") => {
-  if (assessment.createdBy !== userId) {
+export const checkWorksheetOwnership = (
+  worksheet,
+  userId,
+  action = "mengubah"
+) => {
+  if (worksheet.ownerId !== userId) {
     throw new ResponseError(
       403,
-      `Akses ditolak. Hanya pembuat assessment yang dapat ${action}.`
+      `Akses ditolak. Hanya pemilik kertas kerja yang dapat ${action}.`
     );
   }
 };
 
 /**
- * Generate assessment code - Format: RA-{UKER_CODE}-{SEQUENCE}
+ * Generate risk item code - Format: R{SEQUENCE}
  */
-export const generateAssessmentCode = async (worksheetId, unitKerjaCode) => {
-  const count = await prismaClient.riskAssessment.count({
+export const generateRiskItemCode = async (worksheetId) => {
+  const count = await prismaClient.riskAssessmentItem.count({
     where: { worksheetId },
   });
   const sequence = String(count + 1).padStart(3, "0");
-  return `RA-${unitKerjaCode}-${sequence}`;
-};
-
-/**
- * Check if user has KOMITE_PUSAT role
- */
-export const checkKomitePusatRole = (user) => {
-  if (!user.roles.includes(ROLES.KOMITE_PUSAT)) {
-    throw new ResponseError(
-      403,
-      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat melakukan aksi ini."
-    );
-  }
+  return `R${sequence}`;
 };
