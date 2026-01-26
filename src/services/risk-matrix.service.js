@@ -44,7 +44,7 @@ const create = async (konteksId, reqBody) => {
   if (existingMatrix) {
     throw new ResponseError(
       409,
-      `Matriks risiko dengan likelihood level ${reqBody.likelihoodLevel} dan impact level ${reqBody.impactLevel} sudah ada.`
+      `Matriks risiko dengan likelihood level ${reqBody.likelihoodLevel} dan impact level ${reqBody.impactLevel} sudah ada.`,
     );
   }
 
@@ -71,7 +71,7 @@ const create = async (konteksId, reqBody) => {
           code: true,
           periodStart: true,
           periodEnd: true,
-          isActive: true,
+          status: true,
         },
       },
     },
@@ -117,7 +117,7 @@ const bulkCreate = async (konteksId, reqBody) => {
     // Check for duplicates within request body
     if (seen.has(key)) {
       errors.push(
-        `Index ${i}: Duplikat kombinasi likelihood level ${matrix.likelihoodLevel} dan impact level ${matrix.impactLevel}`
+        `Index ${i}: Duplikat kombinasi likelihood level ${matrix.likelihoodLevel} dan impact level ${matrix.impactLevel}`,
       );
     }
     seen.add(key);
@@ -125,12 +125,12 @@ const bulkCreate = async (konteksId, reqBody) => {
     // Check level ranges based on matrixSize from konteks
     if (matrix.likelihoodLevel > matrixSize) {
       errors.push(
-        `Index ${i}: Likelihood level ${matrix.likelihoodLevel} melebihi ukuran matriks (maksimal ${matrixSize})`
+        `Index ${i}: Likelihood level ${matrix.likelihoodLevel} melebihi ukuran matriks (maksimal ${matrixSize})`,
       );
     }
     if (matrix.impactLevel > matrixSize) {
       errors.push(
-        `Index ${i}: Impact level ${matrix.impactLevel} melebihi ukuran matriks (maksimal ${matrixSize})`
+        `Index ${i}: Impact level ${matrix.impactLevel} melebihi ukuran matriks (maksimal ${matrixSize})`,
       );
     }
   }
@@ -146,7 +146,7 @@ const bulkCreate = async (konteksId, reqBody) => {
   });
 
   const existingKeys = new Set(
-    existingMatrices.map((m) => `${m.likelihoodLevel}-${m.impactLevel}`)
+    existingMatrices.map((m) => `${m.likelihoodLevel}-${m.impactLevel}`),
   );
 
   // Check for duplicates against existing data
@@ -155,7 +155,7 @@ const bulkCreate = async (konteksId, reqBody) => {
     const key = `${matrix.likelihoodLevel}-${matrix.impactLevel}`;
     if (existingKeys.has(key)) {
       duplicatesInDb.push(
-        `Likelihood ${matrix.likelihoodLevel} x Impact ${matrix.impactLevel}`
+        `Likelihood ${matrix.likelihoodLevel} x Impact ${matrix.impactLevel}`,
       );
     }
   }
@@ -163,7 +163,7 @@ const bulkCreate = async (konteksId, reqBody) => {
   if (duplicatesInDb.length > 0) {
     throw new ResponseError(
       409,
-      `Matriks berikut sudah ada di database: ${duplicatesInDb.join(", ")}`
+      `Matriks berikut sudah ada di database: ${duplicatesInDb.join(", ")}`,
     );
   }
 
@@ -186,8 +186,8 @@ const bulkCreate = async (konteksId, reqBody) => {
           createdAt: true,
           updatedAt: true,
         },
-      })
-    )
+      }),
+    ),
   );
 
   const expectedTotal = matrixSize * matrixSize;
@@ -244,7 +244,7 @@ const search = async (konteksId, queryParams) => {
           code: true,
           periodStart: true,
           periodEnd: true,
-          isActive: true,
+          status: true,
         },
       },
     },
@@ -290,7 +290,7 @@ const getById = async (konteksId, id) => {
           code: true,
           periodStart: true,
           periodEnd: true,
-          isActive: true,
+          status: true,
         },
       },
     },
@@ -337,7 +337,8 @@ const update = async (konteksId, id, reqBody) => {
   await checkKonteksNotActive(validatedKonteksId, "matriks risiko");
 
   // If updating levels, check uniqueness
-  const newLikelihood = reqBody.likelihoodLevel || existingMatrix.likelihoodLevel;
+  const newLikelihood =
+    reqBody.likelihoodLevel || existingMatrix.likelihoodLevel;
   const newImpact = reqBody.impactLevel || existingMatrix.impactLevel;
 
   if (
@@ -356,7 +357,7 @@ const update = async (konteksId, id, reqBody) => {
     if (duplicateMatrix) {
       throw new ResponseError(
         409,
-        `Matriks risiko dengan likelihood level ${newLikelihood} dan impact level ${newImpact} sudah ada.`
+        `Matriks risiko dengan likelihood level ${newLikelihood} dan impact level ${newImpact} sudah ada.`,
       );
     }
   }
@@ -380,7 +381,7 @@ const update = async (konteksId, id, reqBody) => {
           code: true,
           periodStart: true,
           periodEnd: true,
-          isActive: true,
+          status: true,
         },
       },
     },

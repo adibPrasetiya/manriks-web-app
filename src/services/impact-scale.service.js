@@ -18,7 +18,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   });
   const { riskCategoryId: validatedRiskCategoryId } = validate(
     riskCategoryIdSchema,
-    { riskCategoryId }
+    { riskCategoryId },
   );
 
   // Validate request body
@@ -42,7 +42,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   if (!riskCategory) {
     throw new ResponseError(
       404,
-      "Kategori risiko tidak ditemukan dalam konteks ini."
+      "Kategori risiko tidak ditemukan dalam konteks ini.",
     );
   }
 
@@ -55,7 +55,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   if (reqBody.level > matrixSize) {
     throw new ResponseError(
       400,
-      `Level tidak boleh melebihi ukuran matriks (${matrixSize}).`
+      `Level tidak boleh melebihi ukuran matriks (${matrixSize}).`,
     );
   }
 
@@ -67,7 +67,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   if (currentScalesCount >= matrixSize) {
     throw new ResponseError(
       400,
-      `Jumlah impact scale sudah mencapai batas maksimal (${matrixSize}).`
+      `Jumlah impact scale sudah mencapai batas maksimal (${matrixSize}).`,
     );
   }
 
@@ -82,7 +82,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
   if (existingScale) {
     throw new ResponseError(
       409,
-      `Level ${reqBody.level} sudah digunakan dalam kategori risiko ini.`
+      `Level ${reqBody.level} sudah digunakan dalam kategori risiko ini.`,
     );
   }
 
@@ -114,7 +114,7 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
               code: true,
               periodStart: true,
               periodEnd: true,
-              isActive: true,
+              status: true,
             },
           },
         },
@@ -135,7 +135,7 @@ const search = async (konteksId, riskCategoryId, queryParams) => {
   });
   const { riskCategoryId: validatedRiskCategoryId } = validate(
     riskCategoryIdSchema,
-    { riskCategoryId }
+    { riskCategoryId },
   );
 
   // Validate query parameters
@@ -153,7 +153,7 @@ const search = async (konteksId, riskCategoryId, queryParams) => {
   if (!riskCategory) {
     throw new ResponseError(
       404,
-      "Kategori risiko tidak ditemukan dalam konteks ini."
+      "Kategori risiko tidak ditemukan dalam konteks ini.",
     );
   }
 
@@ -191,7 +191,7 @@ const search = async (konteksId, riskCategoryId, queryParams) => {
               code: true,
               periodStart: true,
               periodEnd: true,
-              isActive: true,
+              status: true,
             },
           },
         },
@@ -222,7 +222,7 @@ const getById = async (konteksId, riskCategoryId, id) => {
   });
   const { riskCategoryId: validatedRiskCategoryId } = validate(
     riskCategoryIdSchema,
-    { riskCategoryId }
+    { riskCategoryId },
   );
   const { id: validatedId } = validate(impactScaleIdSchema, { id });
 
@@ -237,7 +237,7 @@ const getById = async (konteksId, riskCategoryId, id) => {
   if (!riskCategory) {
     throw new ResponseError(
       404,
-      "Kategori risiko tidak ditemukan dalam konteks ini."
+      "Kategori risiko tidak ditemukan dalam konteks ini.",
     );
   }
 
@@ -263,7 +263,7 @@ const getById = async (konteksId, riskCategoryId, id) => {
               code: true,
               periodStart: true,
               periodEnd: true,
-              isActive: true,
+              status: true,
             },
           },
         },
@@ -293,7 +293,7 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
   });
   const { riskCategoryId: validatedRiskCategoryId } = validate(
     riskCategoryIdSchema,
-    { riskCategoryId }
+    { riskCategoryId },
   );
   const { id: validatedId } = validate(impactScaleIdSchema, { id });
   reqBody = validate(updateImpactScaleSchema, reqBody);
@@ -316,7 +316,7 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
   if (!riskCategory) {
     throw new ResponseError(
       404,
-      "Kategori risiko tidak ditemukan dalam konteks ini."
+      "Kategori risiko tidak ditemukan dalam konteks ini.",
     );
   }
 
@@ -329,7 +329,7 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
   if (reqBody.level && reqBody.level > matrixSize) {
     throw new ResponseError(
       400,
-      `Level tidak boleh melebihi ukuran matriks (${matrixSize}).`
+      `Level tidak boleh melebihi ukuran matriks (${matrixSize}).`,
     );
   }
 
@@ -360,7 +360,7 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     if (levelExists) {
       throw new ResponseError(
         409,
-        `Level ${reqBody.level} sudah digunakan dalam kategori risiko ini.`
+        `Level ${reqBody.level} sudah digunakan dalam kategori risiko ini.`,
       );
     }
   }
@@ -389,7 +389,7 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
               code: true,
               periodStart: true,
               periodEnd: true,
-              isActive: true,
+              status: true,
             },
           },
         },
@@ -410,7 +410,7 @@ const remove = async (konteksId, riskCategoryId, id) => {
   });
   const { riskCategoryId: validatedRiskCategoryId } = validate(
     riskCategoryIdSchema,
-    { riskCategoryId }
+    { riskCategoryId },
   );
   const { id: validatedId } = validate(impactScaleIdSchema, { id });
 
@@ -425,7 +425,7 @@ const remove = async (konteksId, riskCategoryId, id) => {
   if (!riskCategory) {
     throw new ResponseError(
       404,
-      "Kategori risiko tidak ditemukan dalam konteks ini."
+      "Kategori risiko tidak ditemukan dalam konteks ini.",
     );
   }
 
