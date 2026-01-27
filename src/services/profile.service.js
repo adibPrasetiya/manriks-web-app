@@ -182,6 +182,7 @@ const get = async (user) => {
     roles: user.roles,
     jabatan: existingProfile.jabatan,
     unitKerja: {
+      id: existingProfile.unitKerja.id,
       name: existingProfile.unitKerja.name,
       email: existingProfile.unitKerja.email,
     },
