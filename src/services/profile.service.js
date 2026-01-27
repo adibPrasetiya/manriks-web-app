@@ -163,6 +163,7 @@ const get = async (user) => {
       isVerified: true,
       unitKerja: {
         select: {
+          id: true,
           name: true,
           email: true,
         },
