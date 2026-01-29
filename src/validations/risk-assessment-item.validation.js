@@ -33,11 +33,7 @@ export const createRiskAssessmentItemSchema = Joi.object({
     "any.required": "Nama risiko wajib diisi",
   }),
 
-  riskDescription: Joi.string().allow("", null).messages({
-    "string.base": "Deskripsi risiko harus berupa teks",
-  }),
-
-  assetId: Joi.string().required().messages({
+  assetId: Joi.string().allow(null).messages({
     "string.base": "ID aset harus berupa string",
   }),
 
@@ -46,6 +42,20 @@ export const createRiskAssessmentItemSchema = Joi.object({
     "any.required": "ID kategori risiko wajib diisi",
   }),
 
+  // Risk Description (kelemahan, ancaman, dampak)
+  weaknessDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi kelemahan harus berupa teks",
+  }),
+
+  threatDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi ancaman harus berupa teks",
+  }),
+
+  impactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi dampak harus berupa teks",
+  }),
+
+  // Inherent Risk
   inherentLikelihood: Joi.number().integer().min(1).required().messages({
     "number.base": "Inherent likelihood harus berupa angka",
     "number.integer": "Inherent likelihood harus berupa bilangan bulat",
@@ -60,6 +70,15 @@ export const createRiskAssessmentItemSchema = Joi.object({
     "any.required": "Inherent impact wajib diisi",
   }),
 
+  inherentLikelihoodDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi inherent likelihood harus berupa teks",
+  }),
+
+  inherentImpactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi inherent impact harus berupa teks",
+  }),
+
+  // Control Assessment
   existingControls: Joi.string().allow("", null).messages({
     "string.base": "Existing controls harus berupa teks",
   }),
@@ -71,6 +90,7 @@ export const createRiskAssessmentItemSchema = Joi.object({
       "any.only": `Control effectiveness harus salah satu dari: ${Object.values(CONTROL_EFFECTIVENESS).join(", ")}`,
     }),
 
+  // Residual Risk
   residualLikelihood: Joi.number().integer().min(1).required().messages({
     "number.base": "Residual likelihood harus berupa angka",
     "number.integer": "Residual likelihood harus berupa bilangan bulat",
@@ -85,6 +105,15 @@ export const createRiskAssessmentItemSchema = Joi.object({
     "any.required": "Residual impact wajib diisi",
   }),
 
+  residualLikelihoodDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi residual likelihood harus berupa teks",
+  }),
+
+  residualImpactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi residual impact harus berupa teks",
+  }),
+
+  // Treatment & Priority
   treatmentOption: Joi.string()
     .valid(...Object.values(TREATMENT_OPTIONS))
     .allow(null)
@@ -94,6 +123,12 @@ export const createRiskAssessmentItemSchema = Joi.object({
 
   treatmentRationale: Joi.string().allow("", null).messages({
     "string.base": "Treatment rationale harus berupa teks",
+  }),
+
+  riskPriorityRank: Joi.number().integer().min(1).allow(null).messages({
+    "number.base": "Risk priority rank harus berupa angka",
+    "number.integer": "Risk priority rank harus berupa bilangan bulat",
+    "number.min": "Risk priority rank minimal 1",
   }),
 
   order: Joi.number().integer().min(0).default(0).messages({
@@ -110,10 +145,20 @@ export const updateRiskAssessmentItemSchema = Joi.object({
     "string.max": "Nama risiko maksimal 255 karakter",
   }),
 
-  riskDescription: Joi.string().allow("", null).messages({
-    "string.base": "Deskripsi risiko harus berupa teks",
+  // Risk Description (kelemahan, ancaman, dampak)
+  weaknessDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi kelemahan harus berupa teks",
   }),
 
+  threatDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi ancaman harus berupa teks",
+  }),
+
+  impactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi dampak harus berupa teks",
+  }),
+
+  // Inherent Risk
   inherentLikelihood: Joi.number().integer().min(1).messages({
     "number.base": "Inherent likelihood harus berupa angka",
     "number.integer": "Inherent likelihood harus berupa bilangan bulat",
@@ -126,6 +171,15 @@ export const updateRiskAssessmentItemSchema = Joi.object({
     "number.min": "Inherent impact minimal 1",
   }),
 
+  inherentLikelihoodDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi inherent likelihood harus berupa teks",
+  }),
+
+  inherentImpactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi inherent impact harus berupa teks",
+  }),
+
+  // Control Assessment
   existingControls: Joi.string().allow("", null).messages({
     "string.base": "Existing controls harus berupa teks",
   }),
@@ -137,6 +191,7 @@ export const updateRiskAssessmentItemSchema = Joi.object({
       "any.only": `Control effectiveness harus salah satu dari: ${Object.values(CONTROL_EFFECTIVENESS).join(", ")}`,
     }),
 
+  // Residual Risk
   residualLikelihood: Joi.number().integer().min(1).messages({
     "number.base": "Residual likelihood harus berupa angka",
     "number.integer": "Residual likelihood harus berupa bilangan bulat",
@@ -149,6 +204,15 @@ export const updateRiskAssessmentItemSchema = Joi.object({
     "number.min": "Residual impact minimal 1",
   }),
 
+  residualLikelihoodDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi residual likelihood harus berupa teks",
+  }),
+
+  residualImpactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi residual impact harus berupa teks",
+  }),
+
+  // Treatment & Priority
   treatmentOption: Joi.string()
     .valid(...Object.values(TREATMENT_OPTIONS))
     .allow(null)
@@ -158,6 +222,12 @@ export const updateRiskAssessmentItemSchema = Joi.object({
 
   treatmentRationale: Joi.string().allow("", null).messages({
     "string.base": "Treatment rationale harus berupa teks",
+  }),
+
+  riskPriorityRank: Joi.number().integer().min(1).allow(null).messages({
+    "number.base": "Risk priority rank harus berupa angka",
+    "number.integer": "Risk priority rank harus berupa bilangan bulat",
+    "number.min": "Risk priority rank minimal 1",
   }),
 
   order: Joi.number().integer().min(0).messages({

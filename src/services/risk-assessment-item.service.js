@@ -30,19 +30,31 @@ const itemSelect = {
   worksheetId: true,
   riskCode: true,
   riskName: true,
-  riskDescription: true,
   assetId: true,
   riskCategoryId: true,
+  // Risk Description (kelemahan, ancaman, dampak)
+  weaknessDescription: true,
+  threatDescription: true,
+  impactDescription: true,
+  // Inherent Risk
   inherentLikelihood: true,
   inherentImpact: true,
+  inherentLikelihoodDescription: true,
+  inherentImpactDescription: true,
   inherentRiskLevel: true,
+  // Control Assessment
   existingControls: true,
   controlEffectiveness: true,
+  // Residual Risk
   residualLikelihood: true,
   residualImpact: true,
+  residualLikelihoodDescription: true,
+  residualImpactDescription: true,
   residualRiskLevel: true,
+  // Treatment & Priority
   treatmentOption: true,
   treatmentRationale: true,
+  riskPriorityRank: true,
   order: true,
   createdAt: true,
   updatedAt: true,
@@ -69,7 +81,7 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
   );
 
   // Check worksheet ownership
-  checkWorksheetOwnership(worksheet, user.userId, "menambah item risiko");
+  // checkWorksheetOwnership(worksheet, user.userId, "menambah item risiko");
 
   // Validate request body
   reqBody = validate(createRiskAssessmentItemSchema, reqBody);
@@ -125,19 +137,33 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
       worksheetId,
       riskCode,
       riskName: reqBody.riskName,
-      riskDescription: reqBody.riskDescription || null,
       assetId: reqBody.assetId || null,
       riskCategoryId: reqBody.riskCategoryId,
+      // Risk Description (kelemahan, ancaman, dampak)
+      weaknessDescription: reqBody.weaknessDescription || null,
+      threatDescription: reqBody.threatDescription || null,
+      impactDescription: reqBody.impactDescription || null,
+      // Inherent Risk
       inherentLikelihood: reqBody.inherentLikelihood,
       inherentImpact: reqBody.inherentImpact,
+      inherentLikelihoodDescription:
+        reqBody.inherentLikelihoodDescription || null,
+      inherentImpactDescription: reqBody.inherentImpactDescription || null,
       inherentRiskLevel,
+      // Control Assessment
       existingControls: reqBody.existingControls || null,
       controlEffectiveness: reqBody.controlEffectiveness || null,
+      // Residual Risk
       residualLikelihood: reqBody.residualLikelihood,
       residualImpact: reqBody.residualImpact,
+      residualLikelihoodDescription:
+        reqBody.residualLikelihoodDescription || null,
+      residualImpactDescription: reqBody.residualImpactDescription || null,
       residualRiskLevel,
+      // Treatment & Priority
       treatmentOption: reqBody.treatmentOption || null,
       treatmentRationale: reqBody.treatmentRationale || null,
+      riskPriorityRank: reqBody.riskPriorityRank || null,
       order: reqBody.order,
     },
     select: itemSelect,

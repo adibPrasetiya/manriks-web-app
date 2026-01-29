@@ -168,6 +168,13 @@ enum MitigationPriority {
   CRITICAL
 }
 
+enum TreatmentOption {
+  ACCEPT
+  MITIGATE
+  TRANSFER
+  AVOID
+}
+
 model ProfileChangeRequest {
   id        String  @id @default(cuid())
   profileId String
@@ -395,29 +402,38 @@ model RiskAssessmentItem {
   worksheetId String
   worksheet   RiskWorksheet @relation(fields: [worksheetId], references: [id], onDelete: Cascade)
 
-  riskCode        String  @db.VarChar(50)
-  riskName        String  @db.VarChar(255)
-  riskDescription String? @db.Text
-  assetId         String?
-  riskCategoryId  String
+  riskCode       String  @db.VarChar(50)
+  riskName       String  @db.VarChar(255)
+  assetId        String?
+  riskCategoryId String
 
-  // Inherent Risk (sebelum kontrol)
-  inherentLikelihood Int
-  inherentImpact     Int
-  inherentRiskLevel  String @db.VarChar(50)
+  // Risk Description (kelemahan, ancaman, dampak)
+  weaknessDescription String? @db.Text
+  threatDescription   String? @db.Text
+  impactDescription   String? @db.Text
+
+  // Inherent Risk (risiko bawaan - sebelum kontrol)
+  inherentLikelihood            Int
+  inherentImpact                Int
+  inherentLikelihoodDescription String? @db.Text
+  inherentImpactDescription     String? @db.Text
+  inherentRiskLevel             String  @db.VarChar(50)
 
   // Control Assessment
   existingControls     String? @db.Text
   controlEffectiveness String? @db.VarChar(50)
 
-  // Residual Risk (setelah kontrol)
-  residualLikelihood Int
-  residualImpact     Int
-  residualRiskLevel  String @db.VarChar(50)
+  // Residual Risk (risiko saat ini - setelah kontrol)
+  residualLikelihood            Int
+  residualImpact                Int
+  residualLikelihoodDescription String? @db.Text
+  residualImpactDescription     String? @db.Text
+  residualRiskLevel             String  @db.VarChar(50)
 
-  // Treatment
+  // Treatment & Priority
   treatmentOption    String? @db.VarChar(50)
   treatmentRationale String? @db.Text
+  riskPriorityRank   Int?
 
   order Int @default(0)
 
