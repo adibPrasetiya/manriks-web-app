@@ -639,6 +639,29 @@ async function main() {
       treatmentRationale: "Kontrol yang ada sudah memadai, risiko residual dapat diterima",
       order: 2,
     },
+    {
+      riskCode: "R003",
+      riskName: "Risiko Fraud pada Transaksi Online",
+      weaknessDescription: "Kurangnya validasi identitas dan verifikasi transaksi pada layanan online",
+      threatDescription: "Pelaku fraud memanfaatkan celah sistem untuk melakukan penipuan atau manipulasi data",
+      impactDescription: "Kerugian finansial, reputasi rusak, tuntutan hukum dari korban",
+      riskCategoryId: riskCategoriesForWorksheet[3].id, // Risiko Kepatuhan
+      inherentLikelihood: 3,
+      inherentImpact: 4,
+      inherentLikelihoodDescription: "Terjadi beberapa kali dalam setahun berdasarkan laporan fraud",
+      inherentImpactDescription: "Kerugian finansial signifikan dan dampak reputasi",
+      inherentRiskLevel: "HIGH",
+      existingControls: "Verifikasi OTP, fraud detection sederhana",
+      controlEffectiveness: "PARTIALLY_EFFECTIVE",
+      residualLikelihood: 2,
+      residualImpact: 3,
+      residualLikelihoodDescription: "Frekuensi berkurang dengan adanya OTP verification",
+      residualImpactDescription: "Dampak dapat diminimalisir dengan deteksi dini",
+      residualRiskLevel: "MEDIUM",
+      treatmentOption: "MITIGATE",
+      treatmentRationale: "Implementasi machine learning fraud detection dan multi-factor authentication",
+      order: 3,
+    },
   ];
 
   for (const item of draftItems) {
@@ -646,7 +669,7 @@ async function main() {
       data: { ...item, worksheetId: worksheetDraft.id },
     });
   }
-  console.log(`   ✓ Added ${draftItems.length} items to DRAFT worksheet`);
+  console.log(`   ✓ Added ${draftItems.length} items to DRAFT worksheet (termasuk risiko fraud)`);
 
   // Worksheet SUBMITTED - sudah diajukan, menunggu persetujuan KOMITE_PUSAT
   const worksheetSubmitted = await prisma.riskWorksheet.create({
@@ -730,6 +753,29 @@ async function main() {
       treatmentRationale: "Kontrol memadai",
       order: 3,
     },
+    {
+      riskCode: "R004",
+      riskName: "Risiko Phishing Attack pada Pegawai",
+      weaknessDescription: "Kurangnya awareness pegawai terhadap serangan phishing dan social engineering",
+      threatDescription: "Attacker mengirim email/pesan palsu untuk mencuri kredensial atau menyebarkan malware",
+      impactDescription: "Kebocoran kredensial, akses tidak sah ke sistem, penyebaran malware internal",
+      riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
+      inherentLikelihood: 4,
+      inherentImpact: 4,
+      inherentLikelihoodDescription: "Serangan phishing terjadi hampir setiap minggu",
+      inherentImpactDescription: "Potensi kompromi sistem kritis jika kredensial dicuri",
+      inherentRiskLevel: "HIGH",
+      existingControls: "Email filtering, security awareness training tahunan",
+      controlEffectiveness: "PARTIALLY_EFFECTIVE",
+      residualLikelihood: 2,
+      residualImpact: 3,
+      residualLikelihoodDescription: "Email filtering mengurangi serangan yang berhasil masuk",
+      residualImpactDescription: "Dampak terbatas dengan segmentasi jaringan",
+      residualRiskLevel: "MEDIUM",
+      treatmentOption: "MITIGATE",
+      treatmentRationale: "Tingkatkan frekuensi security awareness training dan implementasi phishing simulation",
+      order: 4,
+    },
   ];
 
   for (const item of submittedItems) {
@@ -737,7 +783,7 @@ async function main() {
       data: { ...item, worksheetId: worksheetSubmitted.id },
     });
   }
-  console.log(`   ✓ Added ${submittedItems.length} items to SUBMITTED worksheet`);
+  console.log(`   ✓ Added ${submittedItems.length} items to SUBMITTED worksheet (termasuk risiko phishing)`);
 
   // Worksheet APPROVED - sudah disetujui oleh KOMITE_PUSAT
   const worksheetApproved = await prisma.riskWorksheet.create({
@@ -782,6 +828,29 @@ async function main() {
       treatmentRationale: "Perlu rekrutmen tambahan",
       order: 1,
     },
+    {
+      riskCode: "R002",
+      riskName: "Risiko Ketidakpatuhan Regulasi Data Pribadi",
+      weaknessDescription: "Pengelolaan data pribadi belum sepenuhnya sesuai UU PDP dan peraturan terkait",
+      threatDescription: "Audit regulasi menemukan ketidakpatuhan dalam pengelolaan data pribadi masyarakat",
+      impactDescription: "Sanksi administratif, denda, tuntutan hukum, dan kerusakan reputasi institusi",
+      riskCategoryId: riskCategoriesForWorksheet[3].id, // Risiko Kepatuhan
+      inherentLikelihood: 3,
+      inherentImpact: 5,
+      inherentLikelihoodDescription: "Potensi ditemukan saat audit berkala atau insiden",
+      inherentImpactDescription: "Dampak katastropik: sanksi hukum dan kerusakan reputasi besar",
+      inherentRiskLevel: "HIGH",
+      existingControls: "Data protection policy, consent management",
+      controlEffectiveness: "PARTIALLY_EFFECTIVE",
+      residualLikelihood: 1,
+      residualImpact: 4,
+      residualLikelihoodDescription: "Dengan policy yang ada, kemungkinan ketidakpatuhan berkurang",
+      residualImpactDescription: "Jika terjadi pelanggaran, dampak masih signifikan",
+      residualRiskLevel: "MEDIUM",
+      treatmentOption: "MITIGATE",
+      treatmentRationale: "Implementasi Data Protection Impact Assessment (DPIA) dan penunjukan DPO",
+      order: 2,
+    },
   ];
 
   for (const item of approvedItems) {
@@ -789,7 +858,7 @@ async function main() {
       data: { ...item, worksheetId: worksheetApproved.id },
     });
   }
-  console.log(`   ✓ Added ${approvedItems.length} items to APPROVED worksheet`);
+  console.log(`   ✓ Added ${approvedItems.length} items to APPROVED worksheet (termasuk risiko compliance)`);
 
   // Worksheet ARCHIVED - diarsipkan
   const worksheetArchived = await prisma.riskWorksheet.create({
@@ -803,6 +872,63 @@ async function main() {
     },
   });
   console.log(`   ✓ ${worksheetArchived.name} (ARCHIVED) - Dit PP`);
+
+  // Add items to ARCHIVED worksheet (historical data)
+  const archivedItems = [
+    {
+      riskCode: "R001",
+      riskName: "Risiko Kegagalan Sistem Legacy",
+      weaknessDescription: "Sistem legacy dengan teknologi lama dan dokumentasi tidak lengkap",
+      threatDescription: "Kegagalan sistem karena tidak ada dukungan vendor atau komponen usang",
+      impactDescription: "Gangguan operasional berkepanjangan, kehilangan data historis",
+      riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
+      inherentLikelihood: 4,
+      inherentImpact: 3,
+      inherentLikelihoodDescription: "Sistem legacy sering mengalami masalah",
+      inherentImpactDescription: "Gangguan operasional menengah",
+      inherentRiskLevel: "HIGH",
+      existingControls: "Monitoring manual, prosedur restart",
+      controlEffectiveness: "PARTIALLY_EFFECTIVE",
+      residualLikelihood: 2,
+      residualImpact: 2,
+      residualLikelihoodDescription: "Monitoring mengurangi downtime",
+      residualImpactDescription: "Dampak terbatas dengan prosedur backup",
+      residualRiskLevel: "LOW",
+      treatmentOption: "ACCEPT",
+      treatmentRationale: "Sistem akan diganti dalam roadmap modernisasi",
+      order: 1,
+    },
+    {
+      riskCode: "R002",
+      riskName: "Risiko Pencurian Aset Fisik",
+      weaknessDescription: "Kontrol akses fisik ke ruang server dan perangkat belum optimal",
+      threatDescription: "Pencurian perangkat atau akses tidak sah ke area sensitif",
+      impactDescription: "Kehilangan aset, potensi kebocoran data dari perangkat yang dicuri",
+      riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
+      inherentLikelihood: 2,
+      inherentImpact: 3,
+      inherentLikelihoodDescription: "Kemungkinan rendah dengan satpam yang ada",
+      inherentImpactDescription: "Dampak moderat jika perangkat dicuri",
+      inherentRiskLevel: "MEDIUM",
+      existingControls: "Satpam 24 jam, CCTV, akses kartu",
+      controlEffectiveness: "EFFECTIVE",
+      residualLikelihood: 1,
+      residualImpact: 2,
+      residualLikelihoodDescription: "Sangat jarang terjadi dengan kontrol yang ada",
+      residualImpactDescription: "Dampak minor dengan enkripsi perangkat",
+      residualRiskLevel: "LOW",
+      treatmentOption: "ACCEPT",
+      treatmentRationale: "Kontrol yang ada sudah memadai",
+      order: 2,
+    },
+  ];
+
+  for (const item of archivedItems) {
+    await prisma.riskAssessmentItem.create({
+      data: { ...item, worksheetId: worksheetArchived.id },
+    });
+  }
+  console.log(`   ✓ Added ${archivedItems.length} items to ARCHIVED worksheet`);
 
   // Worksheet milik pengelola risiko kedua (untuk testing ownership)
   const worksheetOtherOwner = await prisma.riskWorksheet.create({
