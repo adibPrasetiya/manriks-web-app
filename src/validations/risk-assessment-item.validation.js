@@ -33,7 +33,7 @@ export const createRiskAssessmentItemSchema = Joi.object({
     "any.required": "Nama risiko wajib diisi",
   }),
 
-  assetId: Joi.string().allow(null).messages({
+  assetId: Joi.string().required().messages({
     "string.base": "ID aset harus berupa string",
   }),
 
