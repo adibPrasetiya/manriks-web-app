@@ -599,7 +599,7 @@ async function main() {
       weaknessDescription: "Server dengan kapasitas terbatas dan single point of failure",
       threatDescription: "Lonjakan traffic atau kegagalan hardware yang menyebabkan downtime",
       impactDescription: "Gangguan pelayanan publik, keluhan masyarakat meningkat",
-      assetId: assetsDitPP[0]?.id || null,
+      assetId: findAssetByCode("SRV-DITPP-001").id, // Server Layanan Publik
       riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
       inherentLikelihood: 3,
       inherentImpact: 4,
@@ -623,7 +623,7 @@ async function main() {
       weaknessDescription: "Data sensitif tersimpan di database dengan akses yang luas",
       threatDescription: "Serangan siber atau unauthorized access ke database",
       impactDescription: "Pelanggaran UU PDP, kerugian reputasi, tuntutan hukum",
-      assetId: assetsDitPP[1]?.id || null,
+      assetId: findAssetByCode("DATA-DITPP-002").id, // Data Pengaduan
       riskCategoryId: riskCategoriesForWorksheet[3].id, // Risiko Kepatuhan
       inherentLikelihood: 2,
       inherentImpact: 5,
@@ -647,6 +647,7 @@ async function main() {
       weaknessDescription: "Kurangnya validasi identitas dan verifikasi transaksi pada layanan online",
       threatDescription: "Pelaku fraud memanfaatkan celah sistem untuk melakukan penipuan atau manipulasi data",
       impactDescription: "Kerugian finansial, reputasi rusak, tuntutan hukum dari korban",
+      assetId: findAssetByCode("APP-DITPP-001").id, // Aplikasi Layanan Online
       riskCategoryId: riskCategoriesForWorksheet[3].id, // Risiko Kepatuhan
       inherentLikelihood: 3,
       inherentImpact: 4,
@@ -696,7 +697,7 @@ async function main() {
       weaknessDescription: "Sistem antrian elektronik dengan hardware tua",
       threatDescription: "Kerusakan mesin atau software error saat peak hour",
       impactDescription: "Penumpukan antrian fisik, ketidaknyamanan pengunjung",
-      assetId: findAssetByCode("APP-DITPP-002")?.id || null, // Aplikasi Antrian
+      assetId: findAssetByCode("APP-DITPP-002").id, // Aplikasi Antrian
       riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 4,
       inherentImpact: 3,
@@ -720,7 +721,7 @@ async function main() {
       weaknessDescription: "Jadwal update aplikasi tidak teratur dan tidak ada monitoring vulnerability",
       threatDescription: "Eksploitasi kerentanan keamanan pada aplikasi yang belum di-update",
       impactDescription: "Potensi serangan siber, kebocoran data, atau gangguan layanan",
-      assetId: findAssetByCode("APP-DITPP-001")?.id || null, // Aplikasi Layanan Online
+      assetId: findAssetByCode("APP-DITPP-001").id, // Aplikasi Layanan Online
       riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 3,
       inherentImpact: 3,
@@ -742,7 +743,7 @@ async function main() {
       weaknessDescription: "Perangkat loket (komputer, printer) dengan usia pakai tinggi",
       threatDescription: "Kerusakan hardware akibat pemakaian intensif atau usia perangkat",
       impactDescription: "Gangguan pelayanan di loket, penumpukan antrian",
-      assetId: findAssetByCode("PRK-DITPP-001")?.id || null, // Komputer Loket 1-5
+      assetId: findAssetByCode("PRK-DITPP-001").id, // Komputer Loket 1-5
       riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 4,
       inherentImpact: 2,
@@ -764,7 +765,7 @@ async function main() {
       weaknessDescription: "Kurangnya awareness pegawai terhadap serangan phishing dan social engineering",
       threatDescription: "Attacker mengirim email/pesan palsu untuk mencuri kredensial atau menyebarkan malware",
       impactDescription: "Kebocoran kredensial, akses tidak sah ke sistem, penyebaran malware internal",
-      assetId: findAssetByCode("SDM-DITPP-001")?.id || null, // Tim Customer Service
+      assetId: findAssetByCode("SDM-DITPP-001").id, // Tim Customer Service
       riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
       inherentLikelihood: 4,
       inherentImpact: 4,
@@ -817,7 +818,7 @@ async function main() {
       weaknessDescription: "Jumlah tenaga customer service tidak sebanding dengan volume pengunjung",
       threatDescription: "Lonjakan pengunjung saat jam sibuk melebihi kapasitas pelayanan",
       impactDescription: "Waktu tunggu meningkat, kepuasan pelanggan menurun, komplain meningkat",
-      assetId: findAssetByCode("SDM-DITPP-001")?.id || null, // Tim Customer Service
+      assetId: findAssetByCode("SDM-DITPP-001").id, // Tim Customer Service
       riskCategoryId: riskCategoriesForWorksheet[1].id,
       inherentLikelihood: 4,
       inherentImpact: 3,
@@ -841,7 +842,7 @@ async function main() {
       weaknessDescription: "Pengelolaan data pribadi belum sepenuhnya sesuai UU PDP dan peraturan terkait",
       threatDescription: "Audit regulasi menemukan ketidakpatuhan dalam pengelolaan data pribadi masyarakat",
       impactDescription: "Sanksi administratif, denda, tuntutan hukum, dan kerusakan reputasi institusi",
-      assetId: findAssetByCode("DATA-DITPP-002")?.id || null, // Data Pengaduan
+      assetId: findAssetByCode("DATA-DITPP-002").id, // Data Pengaduan
       riskCategoryId: riskCategoriesForWorksheet[3].id, // Risiko Kepatuhan
       inherentLikelihood: 3,
       inherentImpact: 5,
@@ -889,7 +890,7 @@ async function main() {
       weaknessDescription: "Sistem legacy dengan teknologi lama dan dokumentasi tidak lengkap",
       threatDescription: "Kegagalan sistem karena tidak ada dukungan vendor atau komponen usang",
       impactDescription: "Gangguan operasional berkepanjangan, kehilangan data historis",
-      assetId: findAssetByCode("SRV-DITPP-001")?.id || null, // Server Layanan Publik
+      assetId: findAssetByCode("SRV-DITPP-001").id, // Server Layanan Publik
       riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
       inherentLikelihood: 4,
       inherentImpact: 3,
@@ -913,7 +914,7 @@ async function main() {
       weaknessDescription: "Kontrol akses fisik ke ruang server dan perangkat belum optimal",
       threatDescription: "Pencurian perangkat atau akses tidak sah ke area sensitif",
       impactDescription: "Kehilangan aset, potensi kebocoran data dari perangkat yang dicuri",
-      assetId: findAssetByCode("GDG-DITPP-001")?.id || null, // Gedung Pelayanan Terpadu
+      assetId: findAssetByCode("GDG-DITPP-001").id, // Gedung Pelayanan Terpadu
       riskCategoryId: riskCategoriesForWorksheet[1].id, // Risiko Operasional
       inherentLikelihood: 2,
       inherentImpact: 3,

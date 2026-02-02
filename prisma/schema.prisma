@@ -408,8 +408,8 @@ model RiskAssessmentItem {
 
   riskCode       String  @db.VarChar(50)
   riskName       String  @db.VarChar(255)
-  assetId        String?
-  asset          Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  assetId        String
+  asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
   riskCategoryId String
   riskCategory   RiskCategory @relation(fields: [riskCategoryId], references: [id], onDelete: Restrict)
 
