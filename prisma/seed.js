@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import password from "../src/utils/password.utils.js";
 
 const prisma = new PrismaClient();
 
@@ -65,7 +65,7 @@ async function main() {
 
   // 3. Seed Users
   console.log("👤 Seeding Users...");
-  const hashedPassword = await bcrypt.hash("password123", 10);
+  const hashedPassword = await password.hash("password123");
   const verifiedAt = new Date();
 
   // Admin di Sekretariat Jenderal (active, verified, has profile)

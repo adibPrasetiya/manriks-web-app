@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+import password from "../utils/password.utils.js";
 import { prismaClient } from "../apps/database.js";
 import { validate } from "../utils/validator.utils.js";
 import {
@@ -45,7 +45,7 @@ const registration = async (reqBody) => {
     throw new ResponseError(409, `Email ${reqBody.email} sudah digunakan.`);
   }
 
-  const hashedPassword = await bcrypt.hash(reqBody.password, 10);
+  const hashedPassword = await password.hash(reqBody.password);
 
   const userRole = await prismaClient.role.findUnique({
     where: {
@@ -126,7 +126,7 @@ const login = async (reqBody, userAgent, ipAddress) => {
     );
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  const isPasswordValid = await password.compare(password, user.password);
 
   if (!isPasswordValid) {
     throw new ResponseError(401, "Username/email atau password salah.");
@@ -206,7 +206,7 @@ const updatePassword = async (userId, reqBody) => {
     throw new ResponseError(404, "User tidak ditemukan.");
   }
 
-  const isCurrentPasswordValid = await bcrypt.compare(
+  const isCurrentPasswordValid = await password.compare(
     currentPassword,
     user.password
   );
@@ -215,7 +215,7 @@ const updatePassword = async (userId, reqBody) => {
     throw new ResponseError(401, "Password saat ini salah.");
   }
 
-  const isSamePassword = await bcrypt.compare(newPassword, user.password);
+  const isSamePassword = await password.compare(newPassword, user.password);
 
   if (isSamePassword) {
     throw new ResponseError(
@@ -224,7 +224,7 @@ const updatePassword = async (userId, reqBody) => {
     );
   }
 
-  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+  const hashedNewPassword = await password.hash(newPassword);
 
   await prismaClient.$transaction(async (tx) => {
     await tx.user.update({
