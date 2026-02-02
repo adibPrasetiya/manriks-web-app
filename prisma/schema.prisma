@@ -261,8 +261,9 @@ model RiskCategory {
   updatedAt DateTime @updatedAt
 
   // Relations
-  likelihoodScales LikelihoodScale[]
-  impactScales     ImpactScale[]
+  likelihoodScales    LikelihoodScale[]
+  impactScales        ImpactScale[]
+  riskAssessmentItems RiskAssessmentItem[]
 
   @@unique([konteksId, order])
   @@index([konteksId])
@@ -350,6 +351,9 @@ model Asset {
   createdBy String?
   updatedBy String?
 
+  // Relations
+  riskAssessmentItems RiskAssessmentItem[]
+
   @@unique([unitKerjaId, code])
   @@index([unitKerjaId])
   @@index([categoryId])
@@ -405,7 +409,9 @@ model RiskAssessmentItem {
   riskCode       String  @db.VarChar(50)
   riskName       String  @db.VarChar(255)
   assetId        String?
+  asset          Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
   riskCategoryId String
+  riskCategory   RiskCategory @relation(fields: [riskCategoryId], references: [id], onDelete: Restrict)
 
   // Risk Description (kelemahan, ancaman, dampak)
   weaknessDescription String? @db.Text

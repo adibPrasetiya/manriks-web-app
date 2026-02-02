@@ -14,6 +14,7 @@ import { assetCategoryRoutes } from "./asset-category.route.js";
 import { assetRoutes } from "./asset.route.js";
 import { riskWorksheetRoutes } from "./risk-worksheet.route.js";
 import { riskAssessmentItemRoutes } from "./risk-assessment-item.route.js";
+import { riskMitigationRoutes } from "./risk-mitigation.route.js";
 
 export const protectedRoute = Router();
 
@@ -32,6 +33,7 @@ const routes = [
   ...assetRoutes,
   ...riskWorksheetRoutes,
   ...riskAssessmentItemRoutes,
+  ...riskMitigationRoutes,
 ];
 
 routes.forEach(({ method, path, handler, roles }) => {

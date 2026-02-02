@@ -31,7 +31,19 @@ const itemSelect = {
   riskCode: true,
   riskName: true,
   assetId: true,
+  asset: {
+    select: {
+      name: true,
+      code: true,
+    },
+  },
   riskCategoryId: true,
+  riskCategory: {
+    select: {
+      name: true,
+      description: true,
+    },
+  },
   // Risk Description (kelemahan, ancaman, dampak)
   weaknessDescription: true,
   threatDescription: true,
