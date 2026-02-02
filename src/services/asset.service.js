@@ -6,7 +6,6 @@ import {
   createAssetSchema,
   updateAssetSchema,
   searchAssetSchema,
-  searchAllAssetSchema,
   unitKerjaIdSchema,
   assetIdSchema,
 } from "../validations/asset.validation.js";
