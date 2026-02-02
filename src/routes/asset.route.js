@@ -12,13 +12,21 @@ export const assetRoutes = [
     method: "get",
     path: "/unit-kerja/:unitKerjaId/assets",
     handler: assetController.search,
-    roles: [ROLES.ADMINISTRATOR, ROLES.PENGELOLA_RISIKO_UKER],
+    roles: [
+      ROLES.ADMINISTRATOR,
+      ROLES.KOMITE_PUSAT,
+      ROLES.PENGELOLA_RISIKO_UKER,
+    ],
   },
   {
     method: "get",
     path: "/unit-kerja/:unitKerjaId/assets/:id",
     handler: assetController.getById,
-    roles: [ROLES.ADMINISTRATOR, ROLES.PENGELOLA_RISIKO_UKER],
+    roles: [
+      ROLES.ADMINISTRATOR,
+      ROLES.KOMITE_PUSAT,
+      ROLES.PENGELOLA_RISIKO_UKER,
+    ],
   },
   {
     method: "patch",

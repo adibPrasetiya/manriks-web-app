@@ -6,25 +6,36 @@ import {
   createAssetSchema,
   updateAssetSchema,
   searchAssetSchema,
+  searchAllAssetSchema,
   unitKerjaIdSchema,
   assetIdSchema,
 } from "../validations/asset.validation.js";
 
 /**
  * Check if user has access to the specified unit kerja
- * ADMINISTRATOR can access any unit kerja
+ * ADMINISTRATOR and KOMITE_PUSAT can access any unit kerja
  * PENGELOLA_RISIKO_UKER can only access their own unit kerja
  */
-const checkUnitKerjaAccess = (user, unitKerjaId) => {
+const checkUnitKerjaAccess = (user, unitKerjaId, options = {}) => {
+  const { allowKomitePusat = false } = options;
   const isAdmin = user.roles.includes(ROLES.ADMINISTRATOR);
+  const isKomitePusat = user.roles.includes(ROLES.KOMITE_PUSAT);
 
-  if (!isAdmin) {
-    if (user.unitKerjaId !== unitKerjaId) {
-      throw new ResponseError(
-        403,
-        "Akses ditolak. Anda tidak memiliki akses ke unit kerja ini.",
-      );
-    }
+  // ADMINISTRATOR can always access any unit kerja
+  if (isAdmin) {
+    return;
+  }
+
+  // KOMITE_PUSAT can access any unit kerja if allowed
+  if (allowKomitePusat && isKomitePusat) {
+    return;
+  }
+
+  if (user.unitKerjaId !== unitKerjaId) {
+    throw new ResponseError(
+      403,
+      "Akses ditolak. Anda tidak memiliki akses ke unit kerja ini.",
+    );
   }
 };
 
@@ -140,8 +151,12 @@ const search = async (unitKerjaId, queryParams, user) => {
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
 
-  // Check access
-  checkUnitKerjaAccess(user, unitKerjaId);
+  const isAdmin = user.roles.includes(ROLES.ADMINISTRATOR);
+  const isKomitePusat = user.roles.includes(ROLES.KOMITE_PUSAT);
+  const hasGlobalAccess = isAdmin || isKomitePusat;
+
+  // Check access - allow KOMITE_PUSAT to access any unit kerja
+  checkUnitKerjaAccess(user, unitKerjaId, { allowKomitePusat: true });
 
   // Verify unit kerja exists
   await verifyUnitKerjaExists(unitKerjaId);
@@ -150,9 +165,12 @@ const search = async (unitKerjaId, queryParams, user) => {
   const params = validate(searchAssetSchema, queryParams);
   const { name, code, categoryId, status, page, limit } = params;
 
-  const where = {
-    unitKerjaId: unitKerjaId,
-  };
+  // Build where clause
+  const where = {};
+
+  // For PENGELOLA_RISIKO_UKER: always filter by their unit kerja
+  // For ADMIN and KOMITE_PUSAT: filter by the requested unit kerja
+  where.unitKerjaId = unitKerjaId;
 
   if (name) {
     where.name = {
@@ -194,6 +212,13 @@ const search = async (unitKerjaId, queryParams, user) => {
       status: true,
       createdAt: true,
       updatedAt: true,
+      unitKerja: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+        },
+      },
       category: {
         select: {
           id: true,
@@ -224,8 +249,8 @@ const getById = async (unitKerjaId, id, user) => {
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
 
-  // Check access
-  checkUnitKerjaAccess(user, unitKerjaId);
+  // Check access - allow KOMITE_PUSAT to access any unit kerja
+  checkUnitKerjaAccess(user, unitKerjaId, { allowKomitePusat: true });
 
   // Validate asset ID
   const idParams = validate(assetIdSchema, { id });

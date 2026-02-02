@@ -5,7 +5,7 @@ const create = async (req, res, next) => {
     const result = await assetService.create(
       req.params.unitKerjaId,
       req.body,
-      req.user
+      req.user,
     );
     res
       .status(201)
@@ -24,7 +24,7 @@ const search = async (req, res, next) => {
     const result = await assetService.search(
       req.params.unitKerjaId,
       req.query,
-      req.user
+      req.user,
     );
     res
       .status(200)
@@ -44,7 +44,7 @@ const getById = async (req, res, next) => {
     const result = await assetService.getById(
       req.params.unitKerjaId,
       req.params.id,
-      req.user
+      req.user,
     );
     res
       .status(200)
@@ -64,7 +64,7 @@ const update = async (req, res, next) => {
       req.params.unitKerjaId,
       req.params.id,
       req.body,
-      req.user
+      req.user,
     );
     res
       .status(200)
@@ -83,7 +83,7 @@ const setActive = async (req, res, next) => {
     const result = await assetService.setActive(
       req.params.unitKerjaId,
       req.params.id,
-      req.user
+      req.user,
     );
     res
       .status(200)
@@ -102,7 +102,7 @@ const setInactive = async (req, res, next) => {
     const result = await assetService.setInactive(
       req.params.unitKerjaId,
       req.params.id,
-      req.user
+      req.user,
     );
     res
       .status(200)
@@ -121,7 +121,7 @@ const archive = async (req, res, next) => {
     const result = await assetService.archive(
       req.params.unitKerjaId,
       req.params.id,
-      req.user
+      req.user,
     );
     res
       .status(200)

@@ -127,6 +127,7 @@ export {
   createAssetSchema,
   updateAssetSchema,
   searchAssetSchema,
+  searchAllAssetSchema,
   unitKerjaIdSchema,
   assetIdSchema,
 };
