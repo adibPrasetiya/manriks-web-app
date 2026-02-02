@@ -20,7 +20,8 @@ const riskMatrixItemSchema = Joi.object({
     .required()
     .messages({
       "string.empty": "Risk level tidak boleh kosong",
-      "any.only": "Risk level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
+      "any.only":
+        "Risk level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
       "any.required": "Risk level wajib diisi",
     }),
 });
@@ -28,12 +29,17 @@ const riskMatrixItemSchema = Joi.object({
 const createRiskMatrixSchema = riskMatrixItemSchema;
 
 const bulkCreateRiskMatrixSchema = Joi.object({
-  matrices: Joi.array().items(riskMatrixItemSchema).min(1).max(100).required().messages({
-    "array.base": "Matrices harus berupa array",
-    "array.min": "Minimal harus ada 1 matriks",
-    "array.max": "Maksimal 100 matriks dalam satu request",
-    "any.required": "Matrices wajib diisi",
-  }),
+  matrices: Joi.array()
+    .items(riskMatrixItemSchema)
+    .min(1)
+    .max(100)
+    .required()
+    .messages({
+      "array.base": "Matrices harus berupa array",
+      "array.min": "Minimal harus ada 1 matriks",
+      "array.max": "Maksimal 100 matriks dalam satu request",
+      "any.required": "Matrices wajib diisi",
+    }),
 });
 
 const updateRiskMatrixSchema = Joi.object({
@@ -49,12 +55,10 @@ const updateRiskMatrixSchema = Joi.object({
     "number.min": "Impact level minimal 1",
   }),
 
-  riskLevel: Joi.string()
-    .valid("LOW", "MEDIUM", "HIGH", "CRITICAL")
-    .messages({
-      "string.empty": "Risk level tidak boleh kosong",
-      "any.only": "Risk level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
-    }),
+  riskLevel: Joi.string().valid("LOW", "MEDIUM", "HIGH", "CRITICAL").messages({
+    "string.empty": "Risk level tidak boleh kosong",
+    "any.only": "Risk level harus salah satu dari: LOW, MEDIUM, HIGH, CRITICAL",
+  }),
 })
   .min(1)
   .messages({
@@ -62,6 +66,17 @@ const updateRiskMatrixSchema = Joi.object({
   });
 
 const searchRiskMatrixSchema = Joi.object({
+  likelihoodLevel: Joi.number().integer().min(1).messages({
+    "number.base": "Likelihood level harus berupa angka",
+    "number.integer": "Likelihood level harus berupa bilangan bulat",
+    "number.min": "Likelihood level minimal 1",
+  }),
+
+  impactLevel: Joi.number().integer().min(1).messages({
+    "number.base": "Impact level harus berupa angka",
+    "number.integer": "Impact level harus berupa bilangan bulat",
+    "number.min": "Impact level minimal 1",
+  }),
   page: Joi.number().integer().min(1).default(1).messages({
     "number.base": "Page harus berupa angka",
     "number.integer": "Page harus berupa bilangan bulat",

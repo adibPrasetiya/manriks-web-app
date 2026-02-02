@@ -213,12 +213,21 @@ const search = async (konteksId, queryParams) => {
 
   // Validate query parameters
   const params = validate(searchRiskMatrixSchema, queryParams);
-  const { page, limit } = params;
+  const { page, limit, likelihoodLevel, impactLevel } = params;
 
   // Build where clause
   const where = {
     konteksId: validatedKonteksId,
   };
+
+  //optional filters
+  if (likelihoodLevel !== undefined) {
+    where.likelihoodLevel = likelihoodLevel;
+  }
+
+  if (impactLevel !== undefined) {
+    where.impactLevel = impactLevel;
+  }
 
   const skip = (page - 1) * limit;
 
