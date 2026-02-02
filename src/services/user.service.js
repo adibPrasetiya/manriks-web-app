@@ -18,6 +18,7 @@ import {
 } from "../utils/token.utils.js";
 import { generateDeviceId, parseDeviceName } from "../utils/device.utils.js";
 import { ResponseError } from "../errors/response.error.js";
+import { PASSWORD_EXPIRY_DAYS } from "../config/constant.js";
 
 const registration = async (reqBody) => {
   reqBody = validate(registedNewUserSchema, reqBody);
@@ -67,6 +68,7 @@ const registration = async (reqBody) => {
         name: reqBody.name,
         email: reqBody.email,
         password: hashedPassword,
+        passwordChangedAt: new Date(),
       },
       select: {
         id: true,
@@ -99,7 +101,7 @@ const registration = async (reqBody) => {
 const login = async (reqBody, userAgent, ipAddress) => {
   reqBody = validate(loginSchema, reqBody);
 
-  const { identifier, password } = reqBody;
+  const { identifier, password: passwordInput } = reqBody;
 
   const user = await prismaClient.user.findFirst({
     where: {
@@ -126,10 +128,28 @@ const login = async (reqBody, userAgent, ipAddress) => {
     );
   }
 
-  const isPasswordValid = await password.compare(password, user.password);
+  const isPasswordValid = await password.compare(passwordInput, user.password);
 
   if (!isPasswordValid) {
     throw new ResponseError(401, "Username/email atau password salah.");
+  }
+
+  // Check password expiration
+  if (user.passwordChangedAt) {
+    const expiryDate = new Date(user.passwordChangedAt);
+    expiryDate.setDate(expiryDate.getDate() + PASSWORD_EXPIRY_DAYS);
+
+    if (new Date() > expiryDate) {
+      throw new ResponseError(
+        403,
+        "Password Anda telah kadaluarsa. Silakan hubungi administrator untuk reset password."
+      );
+    }
+  } else {
+    throw new ResponseError(
+      403,
+      "Password Anda telah kadaluarsa. Silakan hubungi administrator untuk reset password."
+    );
   }
 
   const roles = user.userRoles.map((ur) => ur.role.name);

@@ -77,3 +77,6 @@ export const JWT_REFRESH_SECRET =
 export const ACCESS_TOKEN_EXPIRY = NODE_ENV === "production" ? "30s" : "1d";
 export const REFRESH_TOKEN_EXPIRY_HOURS =
   NODE_ENV === "production" ? 1 : 7 * 24; // 1 jam (production) atau 7 hari (development)
+
+// Password expiration configuration
+export const PASSWORD_EXPIRY_DAYS = 30;

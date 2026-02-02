@@ -67,6 +67,7 @@ async function main() {
   console.log("👤 Seeding Users...");
   const hashedPassword = await password.hash("password123");
   const verifiedAt = new Date();
+  const passwordChangedAt = new Date();
 
   // Admin di Sekretariat Jenderal (active, verified, has profile)
   const adminUser = await prisma.user.create({
@@ -75,6 +76,7 @@ async function main() {
       name: "Administrator Sistem",
       email: "admin@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: true,
       userRoles: { create: { roleId: roleAdmin.id } },
@@ -99,6 +101,7 @@ async function main() {
       name: "Komite Pusat Setjen",
       email: "komite.setjen@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: true,
       userRoles: { create: { roleId: roleKomitePusat.id } },
@@ -123,6 +126,7 @@ async function main() {
       name: "Komite Pusat Dit PP",
       email: "komite.ditpp@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: true,
       userRoles: { create: { roleId: roleKomitePusat.id } },
@@ -147,6 +151,7 @@ async function main() {
       name: "Pengelola Risiko Dit PP",
       email: "pengelola.ditpp@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: true,
       userRoles: { create: { roleId: rolePengelolaRisikoUker.id } },
@@ -171,6 +176,7 @@ async function main() {
       name: "Pengelola Risiko 2 Dit PP",
       email: "pengelola2.ditpp@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: true,
       userRoles: { create: { roleId: rolePengelolaRisikoUker.id } },
@@ -195,6 +201,7 @@ async function main() {
       name: "User Tidak Aktif",
       email: "inactive@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: false,
       isVerified: true,
       userRoles: { create: { roleId: roleUser.id } },
@@ -219,6 +226,7 @@ async function main() {
       name: "User Tanpa Profile",
       email: "noprofile@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: true,
       userRoles: { create: { roleId: roleUser.id } },
@@ -233,6 +241,7 @@ async function main() {
       name: "User Profile Belum Verified",
       email: "unverified@kementerian.go.id",
       password: hashedPassword,
+      passwordChangedAt: passwordChangedAt,
       isActive: true,
       isVerified: false,
       userRoles: { create: { roleId: roleUser.id } },
