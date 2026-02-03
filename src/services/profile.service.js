@@ -193,6 +193,7 @@ const get = async (user) => {
     },
     nomorHP: existingProfile.nomorHP,
     isVerified: true,
+    passwordChangedAt: existingProfile.user.passwordChangedAt,
   };
 
   return {
