@@ -406,8 +406,8 @@ model RiskAssessmentItem {
   worksheetId String
   worksheet   RiskWorksheet @relation(fields: [worksheetId], references: [id], onDelete: Cascade)
 
-  riskCode       String  @db.VarChar(50)
-  riskName       String  @db.VarChar(255)
+  riskCode       String       @db.VarChar(50)
+  riskName       String       @db.VarChar(255)
   assetId        String
   asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
   riskCategoryId String
@@ -415,7 +415,7 @@ model RiskAssessmentItem {
 
   // Risk Description (kelemahan, ancaman, dampak)
   weaknessDescription String? @db.Text
-  threatDescription   String? @db.Text
+  treatDescription    String? @db.Text
   impactDescription   String? @db.Text
 
   // Inherent Risk (risiko bawaan - sebelum kontrol)
