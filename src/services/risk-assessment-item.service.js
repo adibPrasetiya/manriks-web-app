@@ -46,7 +46,7 @@ const itemSelect = {
   },
   // Risk Description (kelemahan, ancaman, dampak)
   weaknessDescription: true,
-  threatDescription: true,
+  treatDescription: true,
   impactDescription: true,
   // Inherent Risk
   inherentLikelihood: true,
