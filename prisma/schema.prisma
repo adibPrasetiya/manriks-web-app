@@ -28,6 +28,9 @@ model User {
   submittedWorksheets RiskWorksheet[] @relation("WorksheetSubmitter")
   approvedWorksheets  RiskWorksheet[] @relation("WorksheetApprover")
 
+  // Relations for mitigation validation
+  validatedMitigations RiskMitigation[] @relation("MitigationValidator")
+
   @@index([email])
   @@index([username])
   @@index([isActive, isVerified])
@@ -159,6 +162,12 @@ enum MitigationStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum MitigationValidationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
 }
 
 enum MitigationPriority {
@@ -484,10 +493,12 @@ model RiskMitigation {
   progressNotes      String?          @db.Text
 
   // Validasi oleh KOMITE_PUSAT
-  validatedAt     DateTime?
-  validatedBy     String?
-  validationNotes String?   @db.Text
-  isValidated     Boolean   @default(false)
+  validationStatus MitigationValidationStatus @default(PENDING)
+  validatedAt      DateTime?
+  validatedBy      String?
+  validator        User?                      @relation("MitigationValidator", fields: [validatedBy], references: [id], onDelete: SetNull)
+  validationNotes  String?                    @db.Text
+  isValidated      Boolean                    @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -502,5 +513,7 @@ model RiskMitigation {
   @@index([status])
   @@index([priority])
   @@index([isValidated])
+  @@index([validationStatus])
+  @@index([validatedBy])
   @@map("risk_mitigations")
 }

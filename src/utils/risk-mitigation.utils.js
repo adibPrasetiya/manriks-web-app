@@ -55,7 +55,7 @@ export const verifyMitigationExists = async (mitigationId, itemId) => {
  * Check if mitigation can be modified (not validated)
  */
 export const checkMitigationModifiable = (mitigation) => {
-  if (mitigation.isValidated) {
+  if (mitigation.validationStatus === "VALIDATED" || mitigation.isValidated) {
     throw new ResponseError(
       403,
       "Mitigasi yang sudah divalidasi tidak dapat diubah."

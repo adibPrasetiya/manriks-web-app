@@ -47,8 +47,12 @@ const mitigationSelect = {
   status: true,
   progressPercentage: true,
   progressNotes: true,
+  validationStatus: true,
   validatedAt: true,
   validatedBy: true,
+  validator: {
+    select: { id: true, name: true, username: true },
+  },
   validationNotes: true,
   isValidated: true,
   createdAt: true,
@@ -394,7 +398,7 @@ const validateMitigation = async (
   const existingMitigation = await verifyMitigationExists(mitigationId, itemId);
 
   // Check if already validated
-  if (existingMitigation.isValidated) {
+  if (existingMitigation.validationStatus === "VALIDATED") {
     throw new ResponseError(400, "Mitigasi sudah divalidasi sebelumnya.");
   }
 
@@ -405,6 +409,7 @@ const validateMitigation = async (
   const mitigation = await prismaClient.riskMitigation.update({
     where: { id: mitigationId },
     data: {
+      validationStatus: "VALIDATED",
       isValidated: true,
       validatedAt: new Date(),
       validatedBy: user.userId,
@@ -462,7 +467,7 @@ const rejectMitigation = async (
   const existingMitigation = await verifyMitigationExists(mitigationId, itemId);
 
   // Check if already validated
-  if (existingMitigation.isValidated) {
+  if (existingMitigation.validationStatus === "VALIDATED") {
     throw new ResponseError(
       400,
       "Mitigasi yang sudah divalidasi tidak dapat ditolak.",
@@ -472,10 +477,14 @@ const rejectMitigation = async (
   // Validate request body
   reqBody = validate(rejectMitigationSchema, reqBody);
 
-  // Reject mitigation - keep isValidated as false, set notes
+  // Reject mitigation - track WHO and WHEN rejected
   const mitigation = await prismaClient.riskMitigation.update({
     where: { id: mitigationId },
     data: {
+      validationStatus: "REJECTED",
+      isValidated: false,
+      validatedAt: new Date(),
+      validatedBy: user.userId,
       validationNotes: reqBody.validationNotes,
       updatedBy: user.userId,
     },
@@ -499,10 +508,10 @@ const getPendingValidations = async (queryParams, user) => {
 
   // Validate query params
   const params = validate(pendingValidationSearchSchema, queryParams);
-  const { unitKerjaId, priority, page, limit } = params;
+  const { unitKerjaId, priority, validationStatus, page, limit } = params;
 
   const where = {
-    isValidated: false,
+    validationStatus: validationStatus || "PENDING",
   };
 
   if (priority) {

@@ -31,6 +31,11 @@ const serviceLogger = createServiceLogger("RiskAssessmentItemService");
 const itemSelect = {
   id: true,
   worksheetId: true,
+  worksheet: {
+    select: {
+      name: true,
+    },
+  },
   riskCode: true,
   riskName: true,
   assetId: true,

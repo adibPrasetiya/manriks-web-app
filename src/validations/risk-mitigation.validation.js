@@ -2,6 +2,7 @@ import Joi from "joi";
 import {
   MITIGATION_STATUSES,
   MITIGATION_PRIORITIES,
+  MITIGATION_VALIDATION_STATUSES,
 } from "../config/constant.js";
 
 export const mitigationIdSchema = Joi.object({
@@ -182,6 +183,12 @@ export const pendingValidationSearchSchema = Joi.object({
     .valid(...Object.values(MITIGATION_PRIORITIES))
     .messages({
       "any.only": `Prioritas harus salah satu dari: ${Object.values(MITIGATION_PRIORITIES).join(", ")}`,
+    }),
+
+  validationStatus: Joi.string()
+    .valid(...Object.values(MITIGATION_VALIDATION_STATUSES))
+    .messages({
+      "any.only": `Status validasi harus salah satu dari: ${Object.values(MITIGATION_VALIDATION_STATUSES).join(", ")}`,
     }),
 
   page: Joi.number().integer().min(1).default(1).messages({
