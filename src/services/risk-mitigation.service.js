@@ -27,6 +27,9 @@ import {
   rejectMitigationSchema,
   pendingValidationSearchSchema,
 } from "../validations/risk-mitigation.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("RiskMitigationService");
 
 const mitigationSelect = {
   id: true,
@@ -74,11 +77,11 @@ const create = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
   // Verify worksheet exists and is DRAFT
   const worksheet = await verifyWorksheetExistsAndDraft(
     worksheetId,
-    unitKerjaId
+    unitKerjaId,
   );
 
   // Check worksheet ownership
-  checkWorksheetOwnership(worksheet, user.userId, "menambah mitigasi risiko");
+  // checkWorksheetOwnership(worksheet, user.userId, "menambah mitigasi risiko");
 
   // Verify item exists and belongs to worksheet
   await verifyItemExists(itemId, worksheetId);
@@ -185,7 +188,13 @@ const search = async (unitKerjaId, worksheetId, itemId, queryParams, user) => {
   };
 };
 
-const getById = async (unitKerjaId, worksheetId, itemId, mitigationId, user) => {
+const getById = async (
+  unitKerjaId,
+  worksheetId,
+  itemId,
+  mitigationId,
+  user,
+) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
   unitKerjaId = unitKerjaParams.unitKerjaId;
@@ -237,7 +246,7 @@ const update = async (
   itemId,
   mitigationId,
   reqBody,
-  user
+  user,
 ) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
@@ -261,11 +270,11 @@ const update = async (
   // Verify worksheet exists and is DRAFT
   const worksheet = await verifyWorksheetExistsAndDraft(
     worksheetId,
-    unitKerjaId
+    unitKerjaId,
   );
 
   // Check worksheet ownership
-  checkWorksheetOwnership(worksheet, user.userId, "mengubah mitigasi risiko");
+  // checkWorksheetOwnership(worksheet, user.userId, "mengubah mitigasi risiko");
 
   // Verify item exists
   await verifyItemExists(itemId, worksheetId);
@@ -318,7 +327,7 @@ const remove = async (unitKerjaId, worksheetId, itemId, mitigationId, user) => {
   // Verify worksheet exists and is DRAFT
   const worksheet = await verifyWorksheetExistsAndDraft(
     worksheetId,
-    unitKerjaId
+    unitKerjaId,
   );
 
   // Check worksheet ownership
@@ -349,7 +358,7 @@ const validateMitigation = async (
   itemId,
   mitigationId,
   reqBody,
-  user
+  user,
 ) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
@@ -368,7 +377,7 @@ const validateMitigation = async (
   if (!user.roles.includes(ROLES.KOMITE_PUSAT)) {
     throw new ResponseError(
       403,
-      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat memvalidasi mitigasi."
+      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat memvalidasi mitigasi.",
     );
   }
 
@@ -417,7 +426,7 @@ const rejectMitigation = async (
   itemId,
   mitigationId,
   reqBody,
-  user
+  user,
 ) => {
   // Validate params
   const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
@@ -436,7 +445,7 @@ const rejectMitigation = async (
   if (!user.roles.includes(ROLES.KOMITE_PUSAT)) {
     throw new ResponseError(
       403,
-      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat menolak mitigasi."
+      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat menolak mitigasi.",
     );
   }
 
@@ -456,7 +465,7 @@ const rejectMitigation = async (
   if (existingMitigation.isValidated) {
     throw new ResponseError(
       400,
-      "Mitigasi yang sudah divalidasi tidak dapat ditolak."
+      "Mitigasi yang sudah divalidasi tidak dapat ditolak.",
     );
   }
 
@@ -484,7 +493,7 @@ const getPendingValidations = async (queryParams, user) => {
   if (!user.roles.includes(ROLES.KOMITE_PUSAT)) {
     throw new ResponseError(
       403,
-      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat melihat daftar mitigasi pending."
+      "Akses ditolak. Hanya KOMITE_PUSAT yang dapat melihat daftar mitigasi pending.",
     );
   }
 

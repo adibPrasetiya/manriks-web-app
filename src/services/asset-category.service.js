@@ -7,6 +7,9 @@ import {
   searchAssetCategorySchema,
   assetCategoryIdSchema,
 } from "../validations/asset-category.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("AssetCategoryService");
 
 const create = async (reqBody) => {
   reqBody = validate(createAssetCategorySchema, reqBody);

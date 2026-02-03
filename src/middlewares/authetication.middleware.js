@@ -1,11 +1,23 @@
 import { prismaClient } from "../apps/database.js";
 import { verifyAccessToken } from "../utils/token.utils.js";
+import {
+  logAuthEvent,
+  logSecurityEvent,
+  buildLogContext,
+  ACTION_TYPES,
+} from "../utils/logger.utils.js";
 
 export const authenticationMiddleware = async (req, res, next) => {
+  const context = buildLogContext(req);
+
   try {
     const authHeader = req.headers["authorization"];
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logAuthEvent(ACTION_TYPES.UNAUTHORIZED, {
+        ...context,
+        reason: "Missing or invalid authorization header",
+      });
       return res.status(401).json({
         errors: "Authorization header is missing or invalid format",
       });
@@ -17,6 +29,10 @@ export const authenticationMiddleware = async (req, res, next) => {
     try {
       decoded = verifyAccessToken(token);
     } catch (error) {
+      logAuthEvent(ACTION_TYPES.TOKEN_INVALID, {
+        ...context,
+        reason: error.message,
+      });
       return res.status(401).json({
         errors: "Invalid or expired access token",
       });
@@ -37,12 +53,26 @@ export const authenticationMiddleware = async (req, res, next) => {
     });
 
     if (!user) {
+      logAuthEvent(ACTION_TYPES.TOKEN_INVALID, {
+        ...context,
+        reason: "User not found for token",
+      });
       return res.status(401).json({
         errors: "User not found",
       });
     }
 
     if (!user.isActive) {
+      logSecurityEvent(
+        ACTION_TYPES.ACCESS_DENIED,
+        {
+          ...context,
+          userId: user.id,
+          username: user.username,
+          reason: "Inactive account",
+        },
+        "warn"
+      );
       return res.status(403).json({
         errors: "User account is not active",
       });
@@ -50,10 +80,16 @@ export const authenticationMiddleware = async (req, res, next) => {
 
     if (user.passwordChangedAt) {
       const passwordChangedTimestamp = Math.floor(
-        user.passwordChangedAt.getTime() / 1000,
+        user.passwordChangedAt.getTime() / 1000
       );
 
       if (decoded.iat < passwordChangedTimestamp) {
+        logAuthEvent(ACTION_TYPES.TOKEN_EXPIRED, {
+          ...context,
+          userId: user.id,
+          username: user.username,
+          reason: "Password changed after token issued",
+        });
         return res.status(401).json({
           errors:
             "Password has been changed. Please login again with new password.",
@@ -66,10 +102,20 @@ export const authenticationMiddleware = async (req, res, next) => {
         req.method === "PATCH" && req.path === "/users/me/password";
 
       if (!isPasswordChangeEndpoint) {
+        logSecurityEvent(
+          ACTION_TYPES.ACCESS_DENIED,
+          {
+            ...context,
+            userId: user.id,
+            username: user.username,
+            reason: "Must change password first",
+          },
+          "warn"
+        );
         return res.status(403).json({
           errors:
             "Password change required. Your password was reset by an administrator. Please change your password before accessing other resources.",
-          mustChangePassword: true, // Flag for frontend
+          mustChangePassword: true,
         });
       }
     }
@@ -119,7 +165,7 @@ export const authenticationMiddleware = async (req, res, next) => {
             );
           }
           return req.method === endpoint.method && req.path === endpoint.path;
-        },
+        }
       );
 
       if (!isAllowedForUnverified) {
@@ -149,6 +195,11 @@ export const authenticationMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
+    logAuthEvent(ACTION_TYPES.INTERNAL_ERROR, {
+      ...context,
+      reason: error.message,
+      errorName: error.name,
+    });
     return res.status(500).json({
       message: "Internal server error during authentication",
       error: error.message,

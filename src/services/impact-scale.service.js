@@ -10,6 +10,9 @@ import {
   konteksIdSchema,
   riskCategoryIdSchema,
 } from "../validations/impact-scale.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("ImpactScaleService");
 
 const create = async (konteksId, riskCategoryId, reqBody) => {
   // Validate konteksId and riskCategoryId

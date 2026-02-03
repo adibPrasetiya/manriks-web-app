@@ -6,6 +6,9 @@ import {
   updateProfileSchema,
 } from "../validations/profile.validation.js";
 import { userIdSchema } from "../validations/user.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("ProfileService");
 
 const create = async (reqBody, userId) => {
   reqBody = validate(createNewProfileSchema, reqBody);
@@ -81,6 +84,13 @@ const create = async (reqBody, userId) => {
     },
   );
 
+  serviceLogger.security(ACTION_TYPES.PROFILE_CREATED, {
+    profileId: profile.id,
+    userId: userId.userId,
+    unitKerjaId: reqBody.unitKerjaId,
+    jabatan: reqBody.jabatan,
+  });
+
   return {
     message:
       "Profile berhasil dibuat. Silakan tunggu verifikasi dari administrator.",
@@ -142,6 +152,11 @@ const update = async (reqBody, userId) => {
       nomorHP: true,
       isVerified: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.PROFILE_UPDATED, {
+    userId: userId.userId,
+    updatedFields: Object.keys(updateData),
   });
 
   return {

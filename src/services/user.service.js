@@ -19,6 +19,9 @@ import {
 import { generateDeviceId, parseDeviceName } from "../utils/device.utils.js";
 import { ResponseError } from "../errors/response.error.js";
 import { PASSWORD_EXPIRY_DAYS } from "../config/constant.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("UserService");
 
 const registration = async (reqBody) => {
   reqBody = validate(registedNewUserSchema, reqBody);
@@ -92,6 +95,12 @@ const registration = async (reqBody) => {
     return newUser;
   });
 
+  serviceLogger.security(ACTION_TYPES.USER_CREATED, {
+    userId: user.id,
+    username: user.username,
+    email: user.email,
+  });
+
   return {
     message: "Registrasi user berhasil",
     data: user,
@@ -102,6 +111,7 @@ const login = async (reqBody, userAgent, ipAddress) => {
   reqBody = validate(loginSchema, reqBody);
 
   const { identifier, password: passwordInput } = reqBody;
+  const loginContext = { identifier, ipAddress, userAgent };
 
   const user = await prismaClient.user.findFirst({
     where: {
@@ -118,10 +128,20 @@ const login = async (reqBody, userAgent, ipAddress) => {
   });
 
   if (!user) {
+    serviceLogger.security(ACTION_TYPES.LOGIN_FAILURE, {
+      ...loginContext,
+      reason: "User not found",
+    });
     throw new ResponseError(401, "Username/email atau password salah.");
   }
 
   if (!user.isActive) {
+    serviceLogger.security(ACTION_TYPES.LOGIN_FAILURE, {
+      ...loginContext,
+      userId: user.id,
+      username: user.username,
+      reason: "Inactive account",
+    });
     throw new ResponseError(
       403,
       "Akun Anda tidak aktif. Silakan hubungi administrator."
@@ -131,6 +151,12 @@ const login = async (reqBody, userAgent, ipAddress) => {
   const isPasswordValid = await password.compare(passwordInput, user.password);
 
   if (!isPasswordValid) {
+    serviceLogger.security(ACTION_TYPES.LOGIN_FAILURE, {
+      ...loginContext,
+      userId: user.id,
+      username: user.username,
+      reason: "Invalid password",
+    });
     throw new ResponseError(401, "Username/email atau password salah.");
   }
 
@@ -190,6 +216,15 @@ const login = async (reqBody, userAgent, ipAddress) => {
       ipAddress: ipAddress || null,
       expiresAt: getRefreshTokenExpiry(),
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.LOGIN_SUCCESS, {
+    userId: user.id,
+    username: user.username,
+    ipAddress,
+    userAgent,
+    deviceId,
+    deviceName,
   });
 
   return {
@@ -263,6 +298,11 @@ const updatePassword = async (userId, reqBody) => {
         userId: userId,
       },
     });
+  });
+
+  serviceLogger.security(ACTION_TYPES.PASSWORD_CHANGED, {
+    userId,
+    username: user.username,
   });
 
   return {
@@ -454,6 +494,10 @@ const logout = async (userId) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.LOGOUT, {
+    userId,
+  });
+
   return {
     message: "Logout berhasil",
   };
@@ -588,6 +632,12 @@ const updateByAdmin = async (userId, reqBody) => {
     });
 
     return userWithRoles;
+  });
+
+  serviceLogger.security(ACTION_TYPES.USER_UPDATED, {
+    userId: updatedUser.id,
+    username: updatedUser.username,
+    updatedFields: Object.keys(reqBody),
   });
 
   // Step 8: Format response

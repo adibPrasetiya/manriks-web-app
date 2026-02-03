@@ -10,6 +10,9 @@ import {
   konteksIdSchema,
   riskCategoryIdSchema,
 } from "../validations/likelihood-scale.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("LikelihoodScaleService");
 
 const create = async (konteksId, riskCategoryId, reqBody) => {
   // Validate konteksId and riskCategoryId

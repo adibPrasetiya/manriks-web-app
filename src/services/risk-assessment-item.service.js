@@ -24,6 +24,9 @@ import {
   searchRiskAssessmentItemSchema,
   itemIdSchema,
 } from "../validations/risk-assessment-item.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("RiskAssessmentItemService");
 
 const itemSelect = {
   id: true,
@@ -153,7 +156,7 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
       riskCategoryId: reqBody.riskCategoryId,
       // Risk Description (kelemahan, ancaman, dampak)
       weaknessDescription: reqBody.weaknessDescription || null,
-      threatDescription: reqBody.threatDescription || null,
+      treatDescription: reqBody.treatDescription || null,
       impactDescription: reqBody.impactDescription || null,
       // Inherent Risk
       inherentLikelihood: reqBody.inherentLikelihood,

@@ -7,6 +7,9 @@ import {
   searchUnitKerjaSchema,
   unitKerjaIdSchema,
 } from "../validations/unit-kerja.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("UnitKerjaService");
 
 const create = async (reqBody) => {
   reqBody = validate(createUnitKerjaSchema, reqBody);

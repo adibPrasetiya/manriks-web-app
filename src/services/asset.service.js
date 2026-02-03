@@ -9,6 +9,9 @@ import {
   unitKerjaIdSchema,
   assetIdSchema,
 } from "../validations/asset.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("AssetService");
 
 /**
  * Check if user has access to the specified unit kerja
@@ -137,6 +140,13 @@ const create = async (unitKerjaId, reqBody, user) => {
         },
       },
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.ASSET_CREATED, {
+    assetId: asset.id,
+    assetCode: asset.code,
+    unitKerjaId,
+    createdBy: user.userId,
   });
 
   return {
@@ -388,6 +398,13 @@ const update = async (unitKerjaId, id, reqBody, user) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.ASSET_UPDATED, {
+    assetId: updatedAsset.id,
+    assetCode: updatedAsset.code,
+    updatedBy: user.userId,
+    updatedFields: Object.keys(reqBody),
+  });
+
   return {
     message: "Aset berhasil diperbarui",
     data: updatedAsset,
@@ -561,6 +578,12 @@ const archive = async (unitKerjaId, id, user) => {
     where: { id: idParams.id },
     data: { status: ASSET_STATUSES.ARCHIVED, updatedBy: user.userId },
     select: assetSelect,
+  });
+
+  serviceLogger.security(ACTION_TYPES.ASSET_ARCHIVED, {
+    assetId: archivedAsset.id,
+    assetCode: archivedAsset.code,
+    archivedBy: user.userId,
   });
 
   return { message: "Aset berhasil diarsipkan", data: archivedAsset };

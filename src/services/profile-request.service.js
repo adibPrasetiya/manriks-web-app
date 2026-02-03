@@ -8,6 +8,9 @@ import {
 } from "../validations/profile-request.validation.js";
 import { userIdSchema } from "../validations/user.validation.js";
 import { ResponseError } from "../errors/response.error.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("ProfileRequestService");
 
 /**
  * Create a new profile change request (for users)

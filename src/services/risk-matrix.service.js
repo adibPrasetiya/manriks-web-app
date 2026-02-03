@@ -10,6 +10,9 @@ import {
   riskMatrixIdSchema,
   konteksIdSchema,
 } from "../validations/risk-matrix.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("RiskMatrixService");
 
 const create = async (konteksId, reqBody) => {
   // Validate konteksId

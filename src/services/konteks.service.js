@@ -9,6 +9,9 @@ import {
 import { ResponseError } from "../errors/response.error.js";
 import { KONTEKS_STATUSES } from "../config/constant.js";
 import { verifyKonteksExists } from "../utils/konteks.utils.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("KonteksService");
 
 const create = async (reqBody, userId) => {
   reqBody = validate(createKonteksSchema, reqBody);
@@ -56,6 +59,12 @@ const create = async (reqBody, userId) => {
       createdBy: true,
       updatedBy: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.KONTEKS_CREATED, {
+    konteksId: konteks.id,
+    konteksCode: konteks.code,
+    createdBy: userId,
   });
 
   return {
@@ -221,6 +230,13 @@ const update = async (konteksId, reqBody, userId) => {
       createdBy: true,
       updatedBy: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.KONTEKS_UPDATED, {
+    konteksId: updatedKonteks.id,
+    konteksCode: updatedKonteks.code,
+    updatedBy: userId,
+    updatedFields: Object.keys(reqBody),
   });
 
   return {

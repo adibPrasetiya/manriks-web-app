@@ -1,6 +1,11 @@
 import { CorsError } from "../errors/cors.error.js";
 import { ResponseError } from "../errors/response.error.js";
 import { ValidationError } from "../errors/validation.error.js";
+import {
+  logError,
+  buildLogContext,
+  ACTION_TYPES,
+} from "../utils/logger.utils.js";
 
 export const errorMiddleware = async (err, req, res, next) => {
   if (!err) {
@@ -8,12 +13,27 @@ export const errorMiddleware = async (err, req, res, next) => {
     return;
   }
 
+  // Build error context for logging
+  const errorContext = buildLogContext(req, {
+    errorType: err.constructor.name,
+  });
+
   if (res.headersSent) {
-    console.error("Error occurred after headers sent:", err);
+    logError(err, {
+      ...errorContext,
+      action: ACTION_TYPES.INTERNAL_ERROR,
+      note: "Error occurred after headers sent",
+    });
     return res.end();
   }
 
   if (err instanceof ValidationError) {
+    logError(err, {
+      ...errorContext,
+      action: ACTION_TYPES.VALIDATION_ERROR,
+      validationDetails: err.details,
+    });
+
     res
       .status(err.statusCode)
       .json({
@@ -22,6 +42,12 @@ export const errorMiddleware = async (err, req, res, next) => {
       })
       .end();
   } else if (err instanceof CorsError) {
+    logError(err, {
+      ...errorContext,
+      action: ACTION_TYPES.ACCESS_DENIED,
+      origin: req.headers.origin,
+    });
+
     res
       .status(err.statusCode)
       .json({
@@ -29,6 +55,11 @@ export const errorMiddleware = async (err, req, res, next) => {
       })
       .end();
   } else if (err instanceof ResponseError) {
+    logError(err, {
+      ...errorContext,
+      action: ACTION_TYPES.ERROR,
+    });
+
     res
       .status(err.statusCode)
       .json({
@@ -36,7 +67,12 @@ export const errorMiddleware = async (err, req, res, next) => {
       })
       .end();
   } else {
-    console.log(err);
+    // Unexpected error - log with full details
+    logError(err, {
+      ...errorContext,
+      action: ACTION_TYPES.INTERNAL_ERROR,
+    });
+
     res
       .status(500)
       .json({

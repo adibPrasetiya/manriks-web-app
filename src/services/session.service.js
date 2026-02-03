@@ -7,6 +7,9 @@ import {
 } from "../validations/session.validation.js";
 import { prismaClient } from "../apps/database.js";
 import { ResponseError } from "../errors/response.error.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("SessionService");
 
 const search = async (queryParams) => {
   const params = validate(searchSessionSchema, queryParams);
@@ -246,6 +249,13 @@ const removeById = async (sessionId, adminUserId) => {
     where: { id: sessionId },
   });
 
+  serviceLogger.security(ACTION_TYPES.SESSION_DELETED, {
+    sessionId,
+    targetUserId: session.userId,
+    targetUsername: session.user.username,
+    adminUserId,
+  });
+
   return {
     message: `Session untuk user ${session.user.username} berhasil dihapus`,
   };
@@ -281,6 +291,13 @@ const removeByUserId = async (userId, adminUserId) => {
     where: { userId },
   });
 
+  serviceLogger.security(ACTION_TYPES.SESSION_DELETED, {
+    targetUserId: userId,
+    targetUsername: user.username,
+    adminUserId,
+    deletedCount: result.count,
+  });
+
   return {
     message: `Semua session untuk user ${user.username} berhasil dihapus`,
     data: {
@@ -306,6 +323,11 @@ const bulkRemoveExpired = async (reqBody) => {
   });
 
   const count = result.count;
+
+  serviceLogger.security(ACTION_TYPES.SESSION_EXPIRED, {
+    deletedCount: count,
+    cleanupType: "bulk_expired",
+  });
 
   return {
     message: `${count} session kadaluarsa berhasil dihapus`,

@@ -16,6 +16,9 @@ import {
   worksheetIdSchema,
   approvalNotesSchema,
 } from "../validations/risk-worksheet.validation.js";
+import { createServiceLogger, ACTION_TYPES } from "../utils/logger.utils.js";
+
+const serviceLogger = createServiceLogger("RiskWorksheetService");
 
 const worksheetSelect = {
   id: true,
@@ -103,6 +106,14 @@ const create = async (unitKerjaId, reqBody, user) => {
       status: RISK_WORKSHEET_STATUSES.DRAFT,
     },
     select: worksheetSelect,
+  });
+
+  serviceLogger.security(ACTION_TYPES.WORKSHEET_CREATED, {
+    worksheetId: worksheet.id,
+    worksheetName: worksheet.name,
+    unitKerjaId,
+    konteksId: reqBody.konteksId,
+    createdBy: user.userId,
   });
 
   return {
@@ -339,6 +350,12 @@ const submit = async (unitKerjaId, id, user) => {
     select: worksheetSelect,
   });
 
+  serviceLogger.security(ACTION_TYPES.WORKSHEET_SUBMITTED, {
+    worksheetId: updatedWorksheet.id,
+    worksheetName: updatedWorksheet.name,
+    submittedBy: user.userId,
+  });
+
   return {
     message: "Kertas kerja risiko berhasil diajukan untuk persetujuan",
     data: updatedWorksheet,
@@ -392,6 +409,12 @@ const approve = async (unitKerjaId, id, reqBody, user) => {
       approvalNotes: reqBody.approvalNotes || null,
     },
     select: worksheetSelect,
+  });
+
+  serviceLogger.security(ACTION_TYPES.WORKSHEET_APPROVED, {
+    worksheetId: updatedWorksheet.id,
+    worksheetName: updatedWorksheet.name,
+    approvedBy: user.userId,
   });
 
   return {
