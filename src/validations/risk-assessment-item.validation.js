@@ -150,7 +150,7 @@ export const updateRiskAssessmentItemSchema = Joi.object({
     "string.base": "Deskripsi kelemahan harus berupa teks",
   }),
 
-  threatDescription: Joi.string().allow("", null).messages({
+  treatDescription: Joi.string().allow("", null).messages({
     "string.base": "Deskripsi ancaman harus berupa teks",
   }),
 
