@@ -168,6 +168,11 @@ const get = async (user) => {
           email: true,
         },
       },
+      user: {
+        select: {
+          passwordChangedAt: true,
+        },
+      },
     },
   });
 
