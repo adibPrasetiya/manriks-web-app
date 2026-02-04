@@ -411,6 +411,10 @@ const approve = async (requestId, adminUserId) => {
     profileUpdateData.verifiedBy = adminUserId.userId;
   }
 
+  if (request.requestType === "CHANGE") {
+    profileUpdateData.isVerified = true;
+  }
+
   // Use transaction to update both profile and request
   const [updatedProfile, updatedRequest] = await prismaClient.$transaction([
     prismaClient.profile.update({
