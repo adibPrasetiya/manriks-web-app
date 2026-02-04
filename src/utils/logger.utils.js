@@ -16,7 +16,7 @@ import {
 const siemFormat = winston.format.combine(
   winston.format.timestamp({ format: "YYYY-MM-DDTHH:mm:ss.SSSZ" }),
   winston.format.errors({ stack: true }),
-  winston.format.json()
+  winston.format.json(),
 );
 
 // Development format - colorized and readable
@@ -28,41 +28,44 @@ const devFormat = winston.format.combine(
       ? `\n${JSON.stringify(meta, null, 2)}`
       : "";
     return `${timestamp} [${level}]: ${message}${metaStr}`;
-  })
+  }),
 );
 
 // Determine transports based on environment
 const getTransports = () => {
   if (isProduction) {
     return [
-      // Combined logs (all levels)
-      new DailyRotateFile({
-        filename: `${LOG_PATHS.COMBINED}-%DATE%.log`,
-        datePattern: LOG_ROTATION.DATE_PATTERN,
-        maxSize: LOG_ROTATION.MAX_SIZE,
-        maxFiles: LOG_ROTATION.MAX_FILES,
-        zippedArchive: LOG_ROTATION.COMPRESS,
-        format: siemFormat,
+      new winston.transports.Console({
+        format: devFormat,
       }),
-      // Error-only logs
-      new DailyRotateFile({
-        filename: `${LOG_PATHS.ERROR}-%DATE%.log`,
-        datePattern: LOG_ROTATION.DATE_PATTERN,
-        level: "error",
-        maxSize: LOG_ROTATION.MAX_SIZE,
-        maxFiles: LOG_ROTATION.MAX_FILES,
-        zippedArchive: LOG_ROTATION.COMPRESS,
-        format: siemFormat,
-      }),
-      // Security/audit logs
-      new DailyRotateFile({
-        filename: `${LOG_PATHS.SECURITY}-%DATE%.log`,
-        datePattern: LOG_ROTATION.DATE_PATTERN,
-        maxSize: LOG_ROTATION.MAX_SIZE,
-        maxFiles: LOG_ROTATION.MAX_FILES,
-        zippedArchive: LOG_ROTATION.COMPRESS,
-        format: siemFormat,
-      }),
+      // // Combined logs (all levels)
+      // new DailyRotateFile({
+      //   filename: `${LOG_PATHS.COMBINED}-%DATE%.log`,
+      //   datePattern: LOG_ROTATION.DATE_PATTERN,
+      //   maxSize: LOG_ROTATION.MAX_SIZE,
+      //   maxFiles: LOG_ROTATION.MAX_FILES,
+      //   zippedArchive: LOG_ROTATION.COMPRESS,
+      //   format: siemFormat,
+      // }),
+      // // Error-only logs
+      // new DailyRotateFile({
+      //   filename: `${LOG_PATHS.ERROR}-%DATE%.log`,
+      //   datePattern: LOG_ROTATION.DATE_PATTERN,
+      //   level: "error",
+      //   maxSize: LOG_ROTATION.MAX_SIZE,
+      //   maxFiles: LOG_ROTATION.MAX_FILES,
+      //   zippedArchive: LOG_ROTATION.COMPRESS,
+      //   format: siemFormat,
+      // }),
+      // // Security/audit logs
+      // new DailyRotateFile({
+      //   filename: `${LOG_PATHS.SECURITY}-%DATE%.log`,
+      //   datePattern: LOG_ROTATION.DATE_PATTERN,
+      //   maxSize: LOG_ROTATION.MAX_SIZE,
+      //   maxFiles: LOG_ROTATION.MAX_FILES,
+      //   zippedArchive: LOG_ROTATION.COMPRESS,
+      //   format: siemFormat,
+      // }),
     ];
   } else {
     // Development: Console only
@@ -121,7 +124,7 @@ export const redact = (obj, sensitiveFields = SENSITIVE_FIELDS) => {
     const shouldRedact = sensitiveFields.some(
       (field) =>
         lowerKey === field.toLowerCase() ||
-        lowerKey.includes(field.toLowerCase())
+        lowerKey.includes(field.toLowerCase()),
     );
 
     if (shouldRedact && value !== undefined && value !== null) {
