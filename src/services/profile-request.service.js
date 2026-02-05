@@ -108,6 +108,12 @@ const create = async (userId, reqBody) => {
     };
   });
 
+  serviceLogger.security(ACTION_TYPES.PROFILE_CHANGE_REQUEST_CREATED, {
+    userId: userId,
+    profileId: profile.id,
+    changedRequestData: changeRequest,
+  });
+
   return {
     message:
       requestType === "INITIAL_VERIFICATION"
@@ -442,6 +448,11 @@ const approve = async (requestId, adminUserId) => {
     }),
   ]);
 
+  serviceLogger.security(ACTION_TYPES.PROFILE_CHANGE_REQUEST_APPROVED, {
+    userId: adminUserId,
+    profileRequestId: requestId,
+  });
+
   return {
     message:
       request.requestType === "INITIAL_VERIFICATION"
@@ -547,6 +558,11 @@ const reject = async (requestId, adminUserId, reqBody) => {
         },
       }),
     ]);
+
+    serviceLogger.security(ACTION_TYPES.PROFILE_CHANGE_REQUEST_REJECTED, {
+      userId: adminUserId,
+      profileRequestId: requestId,
+    });
 
     return {
       message:

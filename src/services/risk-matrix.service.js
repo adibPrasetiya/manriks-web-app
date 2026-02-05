@@ -80,6 +80,10 @@ const create = async (konteksId, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.MATRIX_CREATERD, {
+    konteksId: konteksId,
+  });
+
   return {
     message: "Matriks risiko berhasil dibuat",
     data: riskMatrix,
@@ -195,6 +199,10 @@ const bulkCreate = async (konteksId, reqBody) => {
 
   const expectedTotal = matrixSize * matrixSize;
   const currentTotal = existingMatrices.length + createdMatrices.length;
+
+  serviceLogger.security(ACTION_TYPES.MATRIX_CREATED, {
+    konteksId: konteksId,
+  });
 
   return {
     message: `${createdMatrices.length} matriks risiko berhasil dibuat`,
@@ -399,6 +407,11 @@ const update = async (konteksId, id, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.MATRIX_UPDATED, {
+    konteksId: konteksId,
+    updatedData: reqBody,
+  });
+
   return {
     message: "Matriks risiko berhasil diperbarui",
     data: updatedMatrix,
@@ -432,6 +445,10 @@ const remove = async (konteksId, id) => {
   // Delete risk matrix
   await prismaClient.riskMatrix.delete({
     where: { id: validatedId },
+  });
+
+  serviceLogger.security(ACTION_TYPES.MATRIX_DELETED, {
+    konteksId: konteksId,
   });
 
   return {

@@ -95,6 +95,11 @@ const create = async (konteksId, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.RISK_CATEGORY_CREATED, {
+    konteksId: konteksId,
+    data: riskCategory,
+  });
+
   return {
     message: "Kategori risiko berhasil dibuat",
     data: riskCategory,
@@ -296,6 +301,11 @@ const update = async (konteksId, id, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.RISK_CATEGORY_UPDATED, {
+    riskCategoryId: validatedId,
+    updatedData: reqBody,
+  });
+
   return {
     message: "Kategori risiko berhasil diperbarui",
     data: updatedCategory,
@@ -345,6 +355,10 @@ const remove = async (konteksId, id) => {
   // Delete risk category
   await prismaClient.riskCategory.delete({
     where: { id: validatedId },
+  });
+
+  serviceLogger.security(ACTION_TYPES.RISK_CATEGORY_DELETED, {
+    riskCategoryId: validatedId,
   });
 
   return {

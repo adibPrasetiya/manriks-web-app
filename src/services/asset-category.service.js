@@ -24,7 +24,7 @@ const create = async (reqBody) => {
   if (existingName) {
     throw new ResponseError(
       409,
-      `Nama kategori aset "${reqBody.name}" sudah digunakan.`
+      `Nama kategori aset "${reqBody.name}" sudah digunakan.`,
     );
   }
 
@@ -41,6 +41,10 @@ const create = async (reqBody) => {
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.ASSET_CATEGORY_CREATED, {
+    assetCategoryId: assetCategory.id,
   });
 
   return {
@@ -159,7 +163,7 @@ const update = async (id, reqBody) => {
     if (nameExists) {
       throw new ResponseError(
         409,
-        `Nama kategori aset "${reqBody.name}" sudah digunakan oleh kategori lain.`
+        `Nama kategori aset "${reqBody.name}" sudah digunakan oleh kategori lain.`,
       );
     }
   }
@@ -177,6 +181,11 @@ const update = async (id, reqBody) => {
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.RISK_CATEGORY_UPDATED, {
+    assetCategoryId: idParams.id,
+    updatedData: reqBody,
   });
 
   return {
@@ -209,7 +218,7 @@ const remove = async (id) => {
   if (assetCount > 0) {
     throw new ResponseError(
       409,
-      `Kategori aset tidak dapat dihapus karena masih memiliki ${assetCount} aset yang terkait. Silakan hapus atau pindahkan aset terlebih dahulu.`
+      `Kategori aset tidak dapat dihapus karena masih memiliki ${assetCount} aset yang terkait. Silakan hapus atau pindahkan aset terlebih dahulu.`,
     );
   }
 
@@ -218,6 +227,10 @@ const remove = async (id) => {
     where: {
       id: params.id,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.RISK_CATEGORY_DELETED, {
+    assetCategoryId: params.id,
   });
 
   return {

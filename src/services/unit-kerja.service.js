@@ -24,7 +24,7 @@ const create = async (reqBody) => {
   if (existingCode) {
     throw new ResponseError(
       409,
-      `Kode unit kerja ${reqBody.code} sudah digunakan.`
+      `Kode unit kerja ${reqBody.code} sudah digunakan.`,
     );
   }
 
@@ -43,6 +43,13 @@ const create = async (reqBody) => {
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.UNIT_KERJA_CREATED, {
+    unitKerjaId: unitKerja.id,
+    code: unitKerja.code,
+    name: unitKerja.name,
+    email: unitKerja.email,
   });
 
   return {
@@ -169,7 +176,7 @@ const update = async (id, reqBody) => {
     if (codeExists) {
       throw new ResponseError(
         409,
-        `Kode unit kerja ${reqBody.code} sudah digunakan oleh unit kerja lain.`
+        `Kode unit kerja ${reqBody.code} sudah digunakan oleh unit kerja lain.`,
       );
     }
   }
@@ -188,6 +195,11 @@ const update = async (id, reqBody) => {
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.UNIT_KERJA_UPDATED, {
+    unitKerjaId: idParams.id,
+    updatedData: updatedUnitKerja,
   });
 
   return {
@@ -220,7 +232,7 @@ const remove = async (id) => {
   if (profileCount > 0) {
     throw new ResponseError(
       409,
-      `Unit kerja tidak dapat dihapus karena masih memiliki ${profileCount} profil yang terkait. Silakan hapus atau pindahkan profil terlebih dahulu.`
+      `Unit kerja tidak dapat dihapus karena masih memiliki ${profileCount} profil yang terkait. Silakan hapus atau pindahkan profil terlebih dahulu.`,
     );
   }
 
@@ -229,6 +241,10 @@ const remove = async (id) => {
     where: {
       id: params.id,
     },
+  });
+
+  serviceLogger.security(ACTION_TYPES.UNIT_KERJA_DELETED, {
+    unitKerjaId: params.id,
   });
 
   return {

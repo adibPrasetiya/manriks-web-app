@@ -125,6 +125,10 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.RISK_IMPACT_CREATED, {
+    impactId: impactScale.id,
+  });
+
   return {
     message: "Skala dampak berhasil dibuat",
     data: impactScale,
@@ -400,6 +404,11 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.RISK_IMPACT_UPDATED, {
+    impactId: validatedId,
+    updatedData: reqBody,
+  });
+
   return {
     message: "Skala dampak berhasil diperbarui",
     data: updatedScale,
@@ -468,6 +477,10 @@ const remove = async (konteksId, riskCategoryId, id) => {
   // Delete impact scale
   await prismaClient.impactScale.delete({
     where: { id: validatedId },
+  });
+
+  serviceLogger.security(ACTION_TYPES.RISK_IMPACT_DELETED, {
+    impactId: validatedId,
   });
 
   return {

@@ -189,6 +189,10 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
     select: itemSelect,
   });
 
+  serviceLogger.security(ACTION_TYPES.ASSESSMENT_ITEM_CREATED, {
+    data: item,
+  });
+
   return {
     message: "Item risiko berhasil ditambahkan",
     data: item,
@@ -412,6 +416,11 @@ const update = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
     select: itemSelect,
   });
 
+  serviceLogger.security(ACTION_TYPES.ASSESSMENT_ITEM_UPDATED, {
+    riskAssessmentItemId: itemId,
+    updatedData: reqBody,
+  });
+
   return {
     message: "Item risiko berhasil diperbarui",
     data: updatedItem,
@@ -456,6 +465,10 @@ const remove = async (unitKerjaId, worksheetId, itemId, user) => {
   // Delete item
   await prismaClient.riskAssessmentItem.delete({
     where: { id: itemParams.itemId },
+  });
+
+  serviceLogger.security(ACTION_TYPES.ASSESSMENT_ITEM_DELETED, {
+    riskAssessmentItemId: itemId,
   });
 
   return {

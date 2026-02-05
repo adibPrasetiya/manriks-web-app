@@ -93,6 +93,9 @@ export const ACTION_TYPES = {
   PROFILE_CREATED: "profile.created",
   PROFILE_UPDATED: "profile.updated",
   PROFILE_VERIFIED: "profile.verified",
+  PROFILE_CHANGE_REQUEST_CREATED: "profile.change.request.created",
+  PROFILE_CHANGE_REQUEST_APPROVED: "profile.change.request.approved",
+  PROFILE_CHANGE_REQUEST_REJECTED: "profile.change.request.rejected",
 
   // Session Management
   SESSION_CREATED: "session.created",
@@ -119,11 +122,27 @@ export const ACTION_TYPES = {
   MITIGATION_COMPLETED: "risk.mitigation.completed",
   MITIGATION_DELETED: "risk.mitigation.deleted",
 
+  RISK_CATEGORY_CREATED: "risk.category.created",
+  RISK_CATEGORY_UPDATED: "risk.category.updated",
+  RISK_CATEGORY_DELETED: "risk.category.deleted",
+
+  RISK_LIKELIHOOD_CREATED: "risk.likelihood.created",
+  RISK_LIKELIHOOD_UPDATED: "risk.likelihood.updated",
+  RISK_LIKELIHOOD_DELETED: "risk.likelihood.deleted",
+
+  RISK_IMPACT_CREATED: "risk.impact.created",
+  RISK_IMPACT_UPDATED: "risk.impact.updated",
+  RISK_IMPACT_DELETED: "risk.impact.deleted",
+
   // Asset Management
   ASSET_CREATED: "asset.created",
   ASSET_UPDATED: "asset.updated",
   ASSET_ARCHIVED: "asset.archived",
   ASSET_DELETED: "asset.deleted",
+
+  ASSET_CATEGORY_CREATED: "asset.category.created",
+  ASSET_CATEGORY_UPDATED: "asset.category.updated",
+  ASSET_CATEGORY_DELETED: "asset.category.deleted",
 
   // Konteks
   KONTEKS_CREATED: "konteks.created",
@@ -154,6 +173,10 @@ export const ACTION_TYPES = {
   KRITERIA_KEMUNGKINAN_CREATED: "kriteria.kemungkinan.created",
   KRITERIA_KEMUNGKINAN_UPDATED: "kriteria.kemungkinan.updated",
   KRITERIA_KEMUNGKINAN_DELETED: "kriteria.kemungkinan.deleted",
+
+  MATRIX_CREATED: "matriks.created",
+  MATRIX_UPDATED: "matriks.updated",
+  MATRIX_DELETED: "matriks.deleted",
 
   // HTTP
   HTTP_REQUEST: "http.request",

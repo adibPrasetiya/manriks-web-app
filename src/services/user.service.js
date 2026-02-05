@@ -35,7 +35,7 @@ const registration = async (reqBody) => {
   if (existingUsername) {
     throw new ResponseError(
       409,
-      `Username ${reqBody.username} sudah digunakan.`
+      `Username ${reqBody.username} sudah digunakan.`,
     );
   }
 
@@ -60,7 +60,7 @@ const registration = async (reqBody) => {
   if (!userRole) {
     throw new ResponseError(
       500,
-      "Role default USER tidak ditemukan. Silakan seed database terlebih dahulu."
+      "Role default USER tidak ditemukan. Silakan seed database terlebih dahulu.",
     );
   }
 
@@ -144,7 +144,7 @@ const login = async (reqBody, userAgent, ipAddress) => {
     });
     throw new ResponseError(
       403,
-      "Akun Anda tidak aktif. Silakan hubungi administrator."
+      "Akun Anda tidak aktif. Silakan hubungi administrator.",
     );
   }
 
@@ -168,13 +168,13 @@ const login = async (reqBody, userAgent, ipAddress) => {
     if (new Date() > expiryDate) {
       throw new ResponseError(
         403,
-        "Password Anda telah kadaluarsa. Silakan hubungi administrator untuk reset password."
+        "Password Anda telah kadaluarsa. Silakan hubungi administrator untuk reset password.",
       );
     }
   } else {
     throw new ResponseError(
       403,
-      "Password Anda telah kadaluarsa. Silakan hubungi administrator untuk reset password."
+      "Password Anda telah kadaluarsa. Silakan hubungi administrator untuk reset password.",
     );
   }
 
@@ -263,7 +263,7 @@ const updatePassword = async (userId, reqBody) => {
 
   const isCurrentPasswordValid = await password.compare(
     currentPassword,
-    user.password
+    user.password,
   );
 
   if (!isCurrentPasswordValid) {
@@ -275,7 +275,7 @@ const updatePassword = async (userId, reqBody) => {
   if (isSamePassword) {
     throw new ResponseError(
       400,
-      "Password baru tidak boleh sama dengan password lama."
+      "Password baru tidak boleh sama dengan password lama.",
     );
   }
 
@@ -436,14 +436,14 @@ const refreshToken = async (reqBody) => {
     });
     throw new ResponseError(
       401,
-      "Refresh token sudah kadaluarsa. Silakan login kembali."
+      "Refresh token sudah kadaluarsa. Silakan login kembali.",
     );
   }
 
   if (!session.user.isActive) {
     throw new ResponseError(
       403,
-      "Akun Anda tidak aktif. Silakan hubungi administrator."
+      "Akun Anda tidak aktif. Silakan hubungi administrator.",
     );
   }
 
@@ -484,7 +484,7 @@ const logout = async (userId) => {
   if (!existingSession) {
     throw new ResponseError(
       404,
-      "Session tidak ditemukan. Anda mungkin sudah logout sebelumnya."
+      "Session tidak ditemukan. Anda mungkin sudah logout sebelumnya.",
     );
   }
 
@@ -539,7 +539,7 @@ const updateByAdmin = async (userId, reqBody) => {
     if (emailExists) {
       throw new ResponseError(
         409,
-        `Email ${reqBody.email} sudah digunakan oleh user lain.`
+        `Email ${reqBody.email} sudah digunakan oleh user lain.`,
       );
     }
   }
@@ -555,7 +555,7 @@ const updateByAdmin = async (userId, reqBody) => {
     if (usernameExists) {
       throw new ResponseError(
         409,
-        `Username ${reqBody.username} sudah digunakan oleh user lain.`
+        `Username ${reqBody.username} sudah digunakan oleh user lain.`,
       );
     }
   }
@@ -604,7 +604,7 @@ const updateByAdmin = async (userId, reqBody) => {
       if (roleRecords.length !== roles.length) {
         throw new ResponseError(
           400,
-          "Beberapa role yang diberikan tidak valid."
+          "Beberapa role yang diberikan tidak valid.",
         );
       }
 

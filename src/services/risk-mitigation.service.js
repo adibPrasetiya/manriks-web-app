@@ -113,6 +113,11 @@ const create = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
     select: mitigationSelect,
   });
 
+  serviceLogger.security(ACTION_TYPES.MITIGATION_CREATED, {
+    userId: user.userId,
+    createdData: mitigation,
+  });
+
   return {
     message: "Mitigasi risiko berhasil ditambahkan",
     data: mitigation,
@@ -302,6 +307,11 @@ const update = async (
     select: mitigationSelect,
   });
 
+  serviceLogger.security(ACTION_TYPES.MITIGATION_UPDATED, {
+    riskMitigationId: mitigationId,
+    updatedData: reqBody,
+  });
+
   return {
     message: "Mitigasi risiko berhasil diperbarui",
     data: mitigation,
@@ -349,6 +359,10 @@ const remove = async (unitKerjaId, worksheetId, itemId, mitigationId, user) => {
   // Delete mitigation
   await prismaClient.riskMitigation.delete({
     where: { id: mitigationId },
+  });
+
+  serviceLogger.security(ACTION_TYPES.MITIGATION_DELETED, {
+    mitigationId: mitigationId,
   });
 
   return {
@@ -417,6 +431,10 @@ const validateMitigation = async (
       updatedBy: user.userId,
     },
     select: mitigationSelect,
+  });
+
+  serviceLogger.security(ACTION_TYPES.MITIGATION_COMPLETED, {
+    validatedBy: user.userId,
   });
 
   return {

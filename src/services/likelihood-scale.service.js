@@ -125,6 +125,10 @@ const create = async (konteksId, riskCategoryId, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.RISK_LIKELIHOOD_CREATED, {
+    likelihoodId: likelihoodScale.id,
+  });
+
   return {
     message: "Skala kemungkinan berhasil dibuat",
     data: likelihoodScale,
@@ -400,6 +404,11 @@ const update = async (konteksId, riskCategoryId, id, reqBody) => {
     },
   });
 
+  serviceLogger.security(ACTION_TYPES.RISK_LIKELIHOOD_UPDATED, {
+    riskLikelihoodId: validatedId,
+    updatedData: reqBody,
+  });
+
   return {
     message: "Skala kemungkinan berhasil diperbarui",
     data: updatedScale,
@@ -468,6 +477,10 @@ const remove = async (konteksId, riskCategoryId, id) => {
   // Delete likelihood scale
   await prismaClient.likelihoodScale.delete({
     where: { id: validatedId },
+  });
+
+  serviceLogger.security(ACTION_TYPES.RISK_LIKELIHOOD_DELETED, {
+    likelihoodId: validatedId,
   });
 
   return {
