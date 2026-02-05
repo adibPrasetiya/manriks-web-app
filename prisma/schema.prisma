@@ -233,6 +233,9 @@ model Konteks {
   // Matrix size (ukuran matriks risiko, e.g., 5 = 5x5)
   matrixSize Int @default(5)
 
+  // Menandakan konteks yang disediakan sistem vs buatan pengguna
+  isSystemDefault Boolean @default(false)
+
   // Risk Appetite (simple fields)
   riskAppetiteLevel       String? @db.VarChar(100) // e.g., "MEDIUM", "HIGH"
   riskAppetiteDescription String? @db.Text
@@ -254,6 +257,7 @@ model Konteks {
   @@index([code])
   @@index([status])
   @@index([periodStart, periodEnd])
+  @@index([isSystemDefault])
   @@map("konteks")
 }
 
@@ -438,12 +442,12 @@ model RiskAssessmentItem {
   existingControls     String? @db.Text
   controlEffectiveness String? @db.VarChar(50)
 
-  // Residual Risk (risiko saat ini - setelah kontrol)
-  residualLikelihood            Int
-  residualImpact                Int
+  // Residual Risk (risiko saat ini - diupdate saat mitigasi disetujui)
+  residualLikelihood            Int?
+  residualImpact                Int?
   residualLikelihoodDescription String? @db.Text
   residualImpactDescription     String? @db.Text
-  residualRiskLevel             String  @db.VarChar(50)
+  residualRiskLevel             String? @db.VarChar(50)
 
   // Treatment & Priority
   treatmentOption    String? @db.VarChar(50)
@@ -491,6 +495,13 @@ model RiskMitigation {
   status             MitigationStatus @default(PLANNED)
   progressPercentage Int              @default(0)
   progressNotes      String?          @db.Text
+
+  // Proposed Residual Risk - nilai yang diajukan pengelola
+  proposedResidualLikelihood            Int
+  proposedResidualImpact                Int
+  proposedResidualLikelihoodDescription String? @db.Text
+  proposedResidualImpactDescription     String? @db.Text
+  proposedResidualRiskLevel             String  @db.VarChar(50)
 
   // Validasi oleh KOMITE_PUSAT
   validationStatus MitigationValidationStatus @default(PENDING)

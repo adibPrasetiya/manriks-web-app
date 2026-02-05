@@ -51,6 +51,14 @@ export const riskMitigationRoutes = [
     roles: [ROLES.KOMITE_PUSAT],
   },
 
+  // Resubmit - PENGELOLA_RISIKO_UKER (after rejection)
+  {
+    method: "patch",
+    path: `${basePath}/:mitigationId/resubmit`,
+    handler: riskMitigationController.resubmit,
+    roles: [ROLES.PENGELOLA_RISIKO_UKER],
+  },
+
   // Cross-unit kerja - KOMITE_PUSAT dashboard
   {
     method: "get",

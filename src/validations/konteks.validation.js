@@ -62,6 +62,11 @@ const createKonteksSchema = Joi.object({
     "number.max": "Ukuran matriks maksimal 10",
     "any.required": "Ukuran matriks wajib diisi",
   }),
+
+  // Menandakan konteks yang disediakan sistem vs buatan pengguna
+  isSystemDefault: Joi.boolean().default(false).messages({
+    "boolean.base": "isSystemDefault harus berupa boolean",
+  }),
 });
 
 const updateKonteksSchema = Joi.object({
@@ -88,6 +93,11 @@ const updateKonteksSchema = Joi.object({
     "number.min": "Ukuran matriks minimal 3",
     "number.max": "Ukuran matriks maksimal 10",
   }),
+
+  // Menandakan konteks yang disediakan sistem vs buatan pengguna
+  isSystemDefault: Joi.boolean().messages({
+    "boolean.base": "isSystemDefault harus berupa boolean",
+  }),
 })
   .min(1)
   .messages({
@@ -108,6 +118,9 @@ const searchKonteksSchema = Joi.object({
     .messages({
       "any.only": "Status harus salah satu dari: ACTIVE, INACTIVE, ARCHIVED",
     }),
+  isSystemDefault: Joi.boolean().messages({
+    "boolean.base": "isSystemDefault harus berupa boolean",
+  }),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 });

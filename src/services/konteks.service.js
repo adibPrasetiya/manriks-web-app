@@ -37,6 +37,7 @@ const create = async (reqBody, userId) => {
       periodStart: reqBody.periodStart,
       periodEnd: reqBody.periodEnd,
       matrixSize: reqBody.matrixSize,
+      isSystemDefault: reqBody.isSystemDefault || false,
       riskAppetiteLevel: reqBody.riskAppetiteLevel || null,
       riskAppetiteDescription: reqBody.riskAppetiteDescription || null,
       status: KONTEKS_STATUSES.INACTIVE,
@@ -51,6 +52,7 @@ const create = async (reqBody, userId) => {
       periodStart: true,
       periodEnd: true,
       matrixSize: true,
+      isSystemDefault: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       status: true,
@@ -75,7 +77,16 @@ const create = async (reqBody, userId) => {
 
 const search = async (queryParams) => {
   const params = validate(searchKonteksSchema, queryParams);
-  const { name, code, periodStart, periodEnd, status, page, limit } = params;
+  const {
+    name,
+    code,
+    periodStart,
+    periodEnd,
+    status,
+    isSystemDefault,
+    page,
+    limit,
+  } = params;
 
   const where = {};
 
@@ -99,6 +110,10 @@ const search = async (queryParams) => {
     where.status = status;
   }
 
+  if (isSystemDefault !== undefined) {
+    where.isSystemDefault = isSystemDefault;
+  }
+
   const skip = (page - 1) * limit;
 
   const totalItems = await prismaClient.konteks.count({ where });
@@ -116,6 +131,7 @@ const search = async (queryParams) => {
       periodStart: true,
       periodEnd: true,
       matrixSize: true,
+      isSystemDefault: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       status: true,
@@ -222,6 +238,7 @@ const update = async (konteksId, reqBody, userId) => {
       periodStart: true,
       periodEnd: true,
       matrixSize: true,
+      isSystemDefault: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       status: true,
@@ -310,20 +327,10 @@ const setActive = async (konteksId, userId) => {
     );
   }
 
-  // Use transaction: deactivate all active konteks, then activate the selected one
-  await prismaClient.$transaction([
-    prismaClient.konteks.updateMany({
-      where: { status: KONTEKS_STATUSES.ACTIVE },
-      data: { status: KONTEKS_STATUSES.INACTIVE, updatedBy: userId },
-    }),
-    prismaClient.konteks.update({
-      where: { id },
-      data: { status: KONTEKS_STATUSES.ACTIVE, updatedBy: userId },
-    }),
-  ]);
-
-  const activeKonteks = await prismaClient.konteks.findUnique({
+  // Activate the selected konteks (allow multiple active konteks)
+  const activeKonteks = await prismaClient.konteks.update({
     where: { id },
+    data: { status: KONTEKS_STATUSES.ACTIVE, updatedBy: userId },
     select: {
       id: true,
       name: true,
@@ -332,6 +339,7 @@ const setActive = async (konteksId, userId) => {
       periodStart: true,
       periodEnd: true,
       matrixSize: true,
+      isSystemDefault: true,
       status: true,
       createdAt: true,
       updatedAt: true,
@@ -377,6 +385,8 @@ const deactivate = async (konteksId, userId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
+      isSystemDefault: true,
       status: true,
       createdAt: true,
       updatedAt: true,
@@ -422,6 +432,8 @@ const archive = async (konteksId, userId) => {
       description: true,
       periodStart: true,
       periodEnd: true,
+      matrixSize: true,
+      isSystemDefault: true,
       status: true,
       createdAt: true,
       updatedAt: true,

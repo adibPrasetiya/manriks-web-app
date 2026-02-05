@@ -145,6 +145,24 @@ const getPendingValidations = async (req, res, next) => {
   }
 };
 
+const resubmit = async (req, res, next) => {
+  try {
+    const result = await riskMitigationService.resubmit(
+      req.params.unitKerjaId,
+      req.params.worksheetId,
+      req.params.itemId,
+      req.params.mitigationId,
+      req.user
+    );
+    res.status(200).json({
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   create,
   search,
@@ -153,5 +171,6 @@ export default {
   remove,
   validate,
   reject,
+  resubmit,
   getPendingValidations,
 };

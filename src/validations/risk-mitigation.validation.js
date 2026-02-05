@@ -56,6 +56,29 @@ export const createMitigationSchema = Joi.object({
     "string.base": "Unit penanggung jawab harus berupa teks",
     "string.max": "Unit penanggung jawab maksimal 255 karakter",
   }),
+
+  // Proposed Residual Risk - nilai yang diajukan pengelola
+  proposedResidualLikelihood: Joi.number().integer().min(1).required().messages({
+    "number.base": "Proposed residual likelihood harus berupa angka",
+    "number.integer": "Proposed residual likelihood harus berupa bilangan bulat",
+    "number.min": "Proposed residual likelihood minimal 1",
+    "any.required": "Proposed residual likelihood wajib diisi",
+  }),
+
+  proposedResidualImpact: Joi.number().integer().min(1).required().messages({
+    "number.base": "Proposed residual impact harus berupa angka",
+    "number.integer": "Proposed residual impact harus berupa bilangan bulat",
+    "number.min": "Proposed residual impact minimal 1",
+    "any.required": "Proposed residual impact wajib diisi",
+  }),
+
+  proposedResidualLikelihoodDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi proposed residual likelihood harus berupa teks",
+  }),
+
+  proposedResidualImpactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi proposed residual impact harus berupa teks",
+  }),
 });
 
 export const updateMitigationSchema = Joi.object({
@@ -120,6 +143,27 @@ export const updateMitigationSchema = Joi.object({
 
   progressNotes: Joi.string().allow("", null).messages({
     "string.base": "Catatan progres harus berupa teks",
+  }),
+
+  // Proposed Residual Risk (optional on update)
+  proposedResidualLikelihood: Joi.number().integer().min(1).messages({
+    "number.base": "Proposed residual likelihood harus berupa angka",
+    "number.integer": "Proposed residual likelihood harus berupa bilangan bulat",
+    "number.min": "Proposed residual likelihood minimal 1",
+  }),
+
+  proposedResidualImpact: Joi.number().integer().min(1).messages({
+    "number.base": "Proposed residual impact harus berupa angka",
+    "number.integer": "Proposed residual impact harus berupa bilangan bulat",
+    "number.min": "Proposed residual impact minimal 1",
+  }),
+
+  proposedResidualLikelihoodDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi proposed residual likelihood harus berupa teks",
+  }),
+
+  proposedResidualImpactDescription: Joi.string().allow("", null).messages({
+    "string.base": "Deskripsi proposed residual impact harus berupa teks",
   }),
 }).min(1);
 

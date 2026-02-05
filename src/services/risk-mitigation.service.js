@@ -14,6 +14,10 @@ import {
   generateMitigationCode,
 } from "../utils/risk-mitigation.utils.js";
 import {
+  getRiskLevelFromMatrix,
+  validateLikelihoodImpact,
+} from "../utils/risk-calculation.utils.js";
+import {
   unitKerjaIdSchema,
   worksheetIdSchema,
   itemIdSchema,
@@ -47,6 +51,13 @@ const mitigationSelect = {
   status: true,
   progressPercentage: true,
   progressNotes: true,
+  // Proposed Residual Risk
+  proposedResidualLikelihood: true,
+  proposedResidualImpact: true,
+  proposedResidualLikelihoodDescription: true,
+  proposedResidualImpactDescription: true,
+  proposedResidualRiskLevel: true,
+  // Validation
   validationStatus: true,
   validatedAt: true,
   validatedBy: true,
@@ -93,6 +104,24 @@ const create = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
   // Validate request body
   reqBody = validate(createMitigationSchema, reqBody);
 
+  // Get konteks for risk level calculation
+  const { konteks } = worksheet;
+  const { matrixSize } = konteks;
+
+  // Validate proposed residual likelihood and impact
+  validateLikelihoodImpact(
+    matrixSize,
+    reqBody.proposedResidualLikelihood,
+    reqBody.proposedResidualImpact,
+  );
+
+  // Calculate proposed residual risk level
+  const proposedResidualRiskLevel = await getRiskLevelFromMatrix(
+    konteks.id,
+    reqBody.proposedResidualLikelihood,
+    reqBody.proposedResidualImpact,
+  );
+
   // Generate mitigation code
   const code = await generateMitigationCode(itemId);
 
@@ -108,6 +137,14 @@ const create = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
       plannedEndDate: reqBody.plannedEndDate || null,
       responsiblePerson: reqBody.responsiblePerson || null,
       responsibleUnit: reqBody.responsibleUnit || null,
+      // Proposed Residual Risk
+      proposedResidualLikelihood: reqBody.proposedResidualLikelihood,
+      proposedResidualImpact: reqBody.proposedResidualImpact,
+      proposedResidualLikelihoodDescription:
+        reqBody.proposedResidualLikelihoodDescription || null,
+      proposedResidualImpactDescription:
+        reqBody.proposedResidualImpactDescription || null,
+      proposedResidualRiskLevel,
       createdBy: user.userId,
     },
     select: mitigationSelect,
@@ -297,11 +334,44 @@ const update = async (
   // Validate request body
   reqBody = validate(updateMitigationSchema, reqBody);
 
+  // Prepare update data
+  const updateData = { ...reqBody };
+
+  // If proposed residual likelihood or impact is being updated, recalculate risk level
+  if (
+    reqBody.proposedResidualLikelihood !== undefined ||
+    reqBody.proposedResidualImpact !== undefined
+  ) {
+    const { konteks } = worksheet;
+    const { matrixSize } = konteks;
+
+    const proposedResidualLikelihood =
+      reqBody.proposedResidualLikelihood ??
+      existingMitigation.proposedResidualLikelihood;
+    const proposedResidualImpact =
+      reqBody.proposedResidualImpact ??
+      existingMitigation.proposedResidualImpact;
+
+    // Validate proposed residual values
+    validateLikelihoodImpact(
+      matrixSize,
+      proposedResidualLikelihood,
+      proposedResidualImpact,
+    );
+
+    // Recalculate proposed residual risk level
+    updateData.proposedResidualRiskLevel = await getRiskLevelFromMatrix(
+      konteks.id,
+      proposedResidualLikelihood,
+      proposedResidualImpact,
+    );
+  }
+
   // Update mitigation
   const mitigation = await prismaClient.riskMitigation.update({
     where: { id: mitigationId },
     data: {
-      ...reqBody,
+      ...updateData,
       updatedBy: user.userId,
     },
     select: mitigationSelect,
@@ -419,26 +489,49 @@ const validateMitigation = async (
   // Validate request body
   reqBody = validate(validateMitigationSchema, reqBody);
 
-  // Validate mitigation
-  const mitigation = await prismaClient.riskMitigation.update({
-    where: { id: mitigationId },
-    data: {
-      validationStatus: "VALIDATED",
-      isValidated: true,
-      validatedAt: new Date(),
-      validatedBy: user.userId,
-      validationNotes: reqBody.validationNotes || null,
-      updatedBy: user.userId,
-    },
-    select: mitigationSelect,
-  });
+  // Use transaction to:
+  // 1. Update mitigation status to VALIDATED
+  // 2. Update RiskAssessmentItem residual values from proposed values
+  const [mitigation] = await prismaClient.$transaction([
+    prismaClient.riskMitigation.update({
+      where: { id: mitigationId },
+      data: {
+        validationStatus: "VALIDATED",
+        isValidated: true,
+        validatedAt: new Date(),
+        validatedBy: user.userId,
+        validationNotes: reqBody.validationNotes || null,
+        updatedBy: user.userId,
+      },
+      select: mitigationSelect,
+    }),
+    prismaClient.riskAssessmentItem.update({
+      where: { id: itemId },
+      data: {
+        residualLikelihood: existingMitigation.proposedResidualLikelihood,
+        residualImpact: existingMitigation.proposedResidualImpact,
+        residualLikelihoodDescription:
+          existingMitigation.proposedResidualLikelihoodDescription,
+        residualImpactDescription:
+          existingMitigation.proposedResidualImpactDescription,
+        residualRiskLevel: existingMitigation.proposedResidualRiskLevel,
+      },
+    }),
+  ]);
 
   serviceLogger.security(ACTION_TYPES.MITIGATION_COMPLETED, {
     validatedBy: user.userId,
+    mitigationId,
+    itemId,
+    residualUpdated: {
+      residualLikelihood: existingMitigation.proposedResidualLikelihood,
+      residualImpact: existingMitigation.proposedResidualImpact,
+      residualRiskLevel: existingMitigation.proposedResidualRiskLevel,
+    },
   });
 
   return {
-    message: "Mitigasi risiko berhasil divalidasi",
+    message: "Mitigasi risiko berhasil divalidasi dan residual risk item diperbarui",
     data: mitigation,
   };
 };
@@ -595,6 +688,75 @@ const getPendingValidations = async (queryParams, user) => {
   };
 };
 
+const resubmitMitigation = async (
+  unitKerjaId,
+  worksheetId,
+  itemId,
+  mitigationId,
+  user,
+) => {
+  // Validate params
+  const unitKerjaParams = validate(unitKerjaIdSchema, { unitKerjaId });
+  unitKerjaId = unitKerjaParams.unitKerjaId;
+
+  const worksheetParams = validate(worksheetIdSchema, { worksheetId });
+  worksheetId = worksheetParams.worksheetId;
+
+  const itemParams = validate(itemIdSchema, { itemId });
+  itemId = itemParams.itemId;
+
+  const mitigationParams = validate(mitigationIdSchema, { mitigationId });
+  mitigationId = mitigationParams.mitigationId;
+
+  // Check unit kerja access
+  checkUnitKerjaAccess(user, unitKerjaId);
+
+  // Verify unit kerja exists
+  await verifyUnitKerjaExists(unitKerjaId);
+
+  // Verify worksheet exists and is DRAFT
+  await verifyWorksheetExistsAndDraft(worksheetId, unitKerjaId);
+
+  // Verify item exists
+  await verifyItemExists(itemId, worksheetId);
+
+  // Verify mitigation exists
+  const existingMitigation = await verifyMitigationExists(mitigationId, itemId);
+
+  // Can only resubmit if currently REJECTED
+  if (existingMitigation.validationStatus !== "REJECTED") {
+    throw new ResponseError(
+      400,
+      "Hanya mitigasi yang ditolak yang dapat diajukan ulang.",
+    );
+  }
+
+  // Reset to PENDING status
+  const mitigation = await prismaClient.riskMitigation.update({
+    where: { id: mitigationId },
+    data: {
+      validationStatus: "PENDING",
+      isValidated: false,
+      validatedAt: null,
+      validatedBy: null,
+      validationNotes: null,
+      updatedBy: user.userId,
+    },
+    select: mitigationSelect,
+  });
+
+  serviceLogger.security(ACTION_TYPES.MITIGATION_UPDATED, {
+    mitigationId,
+    action: "resubmit",
+    resubmittedBy: user.userId,
+  });
+
+  return {
+    message: "Mitigasi risiko berhasil diajukan ulang untuk validasi",
+    data: mitigation,
+  };
+};
+
 export default {
   create,
   search,
@@ -603,5 +765,6 @@ export default {
   remove,
   validate: validateMitigation,
   reject: rejectMitigation,
+  resubmit: resubmitMitigation,
   getPendingValidations,
 };

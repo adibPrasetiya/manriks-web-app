@@ -109,16 +109,11 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
   const { konteks, unitKerja } = worksheet;
   const { matrixSize, riskAppetiteLevel } = konteks;
 
-  // Validate likelihood and impact values
+  // Validate inherent likelihood and impact values
   validateLikelihoodImpact(
     matrixSize,
     reqBody.inherentLikelihood,
     reqBody.inherentImpact,
-  );
-  validateLikelihoodImpact(
-    matrixSize,
-    reqBody.residualLikelihood,
-    reqBody.residualImpact,
   );
 
   // Verify risk category belongs to konteks
@@ -129,29 +124,17 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
     await verifyAssetExists(reqBody.assetId, unitKerjaId);
   }
 
-  // Calculate risk levels from matrix
+  // Calculate inherent risk level from matrix
   const inherentRiskLevel = await getRiskLevelFromMatrix(
     konteks.id,
     reqBody.inherentLikelihood,
     reqBody.inherentImpact,
   );
-  const residualRiskLevel = await getRiskLevelFromMatrix(
-    konteks.id,
-    reqBody.residualLikelihood,
-    reqBody.residualImpact,
-  );
-
-  // Validate treatment option against risk appetite
-  validateTreatmentOption(
-    reqBody.treatmentOption,
-    residualRiskLevel,
-    riskAppetiteLevel,
-  );
 
   // Generate risk code
   const riskCode = await generateRiskItemCode(worksheetId);
 
-  // Create item
+  // Create item - residual risk starts as null, updated when mitigation is approved
   const item = await prismaClient.riskAssessmentItem.create({
     data: {
       worksheetId,
@@ -173,13 +156,12 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
       // Control Assessment
       existingControls: reqBody.existingControls || null,
       controlEffectiveness: reqBody.controlEffectiveness || null,
-      // Residual Risk
-      residualLikelihood: reqBody.residualLikelihood,
-      residualImpact: reqBody.residualImpact,
-      residualLikelihoodDescription:
-        reqBody.residualLikelihoodDescription || null,
-      residualImpactDescription: reqBody.residualImpactDescription || null,
-      residualRiskLevel,
+      // Residual Risk - null, akan diupdate saat mitigasi disetujui
+      residualLikelihood: null,
+      residualImpact: null,
+      residualLikelihoodDescription: null,
+      residualImpactDescription: null,
+      residualRiskLevel: null,
       // Treatment & Priority
       treatmentOption: reqBody.treatmentOption || null,
       treatmentRationale: reqBody.treatmentRationale || null,
@@ -371,6 +353,7 @@ const update = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
   }
 
   // Validate and recalculate residual risk level if likelihood/impact changed
+  // Note: residual risk is now nullable and managed via mitigation approval
   const residualLikelihood =
     reqBody.residualLikelihood ?? existingItem.residualLikelihood;
   const residualImpact = reqBody.residualImpact ?? existingItem.residualImpact;
@@ -381,23 +364,17 @@ const update = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
     reqBody.residualLikelihood !== undefined ||
     reqBody.residualImpact !== undefined
   ) {
-    validateLikelihoodImpact(matrixSize, residualLikelihood, residualImpact);
-    residualRiskLevel = await getRiskLevelFromMatrix(
-      konteks.id,
-      residualLikelihood,
-      residualImpact,
-    );
-    updateData.residualRiskLevel = residualRiskLevel;
+    // Only validate if both values are provided (not null)
+    if (residualLikelihood !== null && residualImpact !== null) {
+      validateLikelihoodImpact(matrixSize, residualLikelihood, residualImpact);
+      residualRiskLevel = await getRiskLevelFromMatrix(
+        konteks.id,
+        residualLikelihood,
+        residualImpact,
+      );
+      updateData.residualRiskLevel = residualRiskLevel;
+    }
   }
-
-  // Validate treatment option against risk appetite
-  const treatmentOption =
-    reqBody.treatmentOption ?? existingItem.treatmentOption;
-  validateTreatmentOption(
-    treatmentOption,
-    residualRiskLevel,
-    riskAppetiteLevel,
-  );
 
   // Verify risk category if changed
   if (reqBody.riskCategoryId !== undefined) {

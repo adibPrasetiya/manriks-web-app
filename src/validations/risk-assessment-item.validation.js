@@ -90,29 +90,6 @@ export const createRiskAssessmentItemSchema = Joi.object({
       "any.only": `Control effectiveness harus salah satu dari: ${Object.values(CONTROL_EFFECTIVENESS).join(", ")}`,
     }),
 
-  // Residual Risk
-  residualLikelihood: Joi.number().integer().min(1).required().messages({
-    "number.base": "Residual likelihood harus berupa angka",
-    "number.integer": "Residual likelihood harus berupa bilangan bulat",
-    "number.min": "Residual likelihood minimal 1",
-    "any.required": "Residual likelihood wajib diisi",
-  }),
-
-  residualImpact: Joi.number().integer().min(1).required().messages({
-    "number.base": "Residual impact harus berupa angka",
-    "number.integer": "Residual impact harus berupa bilangan bulat",
-    "number.min": "Residual impact minimal 1",
-    "any.required": "Residual impact wajib diisi",
-  }),
-
-  residualLikelihoodDescription: Joi.string().allow("", null).messages({
-    "string.base": "Deskripsi residual likelihood harus berupa teks",
-  }),
-
-  residualImpactDescription: Joi.string().allow("", null).messages({
-    "string.base": "Deskripsi residual impact harus berupa teks",
-  }),
-
   // Treatment & Priority
   treatmentOption: Joi.string()
     .valid(...Object.values(TREATMENT_OPTIONS))

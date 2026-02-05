@@ -51,6 +51,7 @@ export const verifyKonteksExists = async (konteksId) => {
       periodStart: true,
       periodEnd: true,
       matrixSize: true,
+      isSystemDefault: true,
       riskAppetiteLevel: true,
       riskAppetiteDescription: true,
       status: true,

@@ -298,6 +298,7 @@ async function main() {
       periodStart: 2024,
       periodEnd: 2025,
       matrixSize: 5,
+      isSystemDefault: true,
       riskAppetiteLevel: "MEDIUM",
       riskAppetiteDescription:
         "Organisasi bersedia menerima risiko dengan dampak medium untuk mencapai tujuan strategis",
@@ -460,6 +461,7 @@ async function main() {
       periodStart: 2026,
       periodEnd: 2026,
       matrixSize: 3,
+      isSystemDefault: true,
       riskAppetiteLevel: "LOW",
       riskAppetiteDescription: "Organisasi memiliki toleransi risiko rendah",
       status: "INACTIVE",
@@ -547,6 +549,7 @@ async function main() {
       periodStart: 2022,
       periodEnd: 2023,
       matrixSize: 4,
+      isSystemDefault: true,
       riskAppetiteLevel: "MEDIUM",
       riskAppetiteDescription: "Konteks yang sudah tidak digunakan lagi",
       status: "ARCHIVED",
@@ -951,13 +954,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Monitoring server 24/7, backup server tersedia",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 2,
-      residualImpact: 3,
-      residualLikelihoodDescription:
-        "Dengan kontrol yang ada, kemungkinan turun menjadi 1 kali per tahun",
-      residualImpactDescription:
-        "Dampak dapat diminimalisir menjadi gangguan 1-2 jam dengan failover",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "MITIGATE",
       treatmentRationale:
         "Perlu meningkatkan kapasitas server dan failover mechanism",
@@ -982,13 +979,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Enkripsi database, access control",
       controlEffectiveness: "EFFECTIVE",
-      residualLikelihood: 1,
-      residualImpact: 4,
-      residualLikelihoodDescription:
-        "Dengan enkripsi dan access control, kemungkinan sangat rendah",
-      residualImpactDescription:
-        "Jika terjadi, dampak masih signifikan namun dapat dimitigasi",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "ACCEPT",
       treatmentRationale:
         "Kontrol yang ada sudah memadai, risiko residual dapat diterima",
@@ -1014,13 +1005,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Verifikasi OTP, fraud detection sederhana",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 2,
-      residualImpact: 3,
-      residualLikelihoodDescription:
-        "Frekuensi berkurang dengan adanya OTP verification",
-      residualImpactDescription:
-        "Dampak dapat diminimalisir dengan deteksi dini",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "MITIGATE",
       treatmentRationale:
         "Implementasi machine learning fraud detection dan multi-factor authentication",
@@ -1070,13 +1055,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Maintenance rutin bulanan",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 3,
-      residualImpact: 2,
-      residualLikelihoodDescription:
-        "Masih cukup sering terjadi meski sudah ada maintenance",
-      residualImpactDescription:
-        "Dampak berkurang karena ada prosedur manual backup",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "MITIGATE",
       treatmentRationale: "Perlu sistem backup antrian manual",
       order: 1,
@@ -1098,10 +1077,7 @@ async function main() {
       inherentRiskLevel: "MEDIUM",
       existingControls: "Jadwal update triwulanan",
       controlEffectiveness: "EFFECTIVE",
-      residualLikelihood: 2,
-      residualImpact: 2,
-      // Tanpa description - menunjukkan field optional
-      residualRiskLevel: "LOW",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "ACCEPT",
       treatmentRationale: "Risiko dapat diterima dengan kontrol yang ada",
       order: 2,
@@ -1122,10 +1098,7 @@ async function main() {
       inherentRiskLevel: "MEDIUM",
       existingControls: "Spare unit tersedia",
       controlEffectiveness: "EFFECTIVE",
-      residualLikelihood: 2,
-      residualImpact: 1,
-      // Tanpa description - menunjukkan field optional
-      residualRiskLevel: "LOW",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "ACCEPT",
       treatmentRationale: "Kontrol memadai",
       order: 3,
@@ -1150,12 +1123,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Email filtering, security awareness training tahunan",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 2,
-      residualImpact: 3,
-      residualLikelihoodDescription:
-        "Email filtering mengurangi serangan yang berhasil masuk",
-      residualImpactDescription: "Dampak terbatas dengan segmentasi jaringan",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "MITIGATE",
       treatmentRationale:
         "Tingkatkan frekuensi security awareness training dan implementasi phishing simulation",
@@ -1213,13 +1181,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Sistem shift, backup dari unit lain",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 3,
-      residualImpact: 2,
-      residualLikelihoodDescription:
-        "Frekuensi berkurang dengan sistem shift yang lebih baik",
-      residualImpactDescription:
-        "Dampak dapat diminimalisir dengan backup dari unit lain",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "MITIGATE",
       treatmentRationale: "Perlu rekrutmen tambahan",
       order: 1,
@@ -1244,13 +1206,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Data protection policy, consent management",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 1,
-      residualImpact: 4,
-      residualLikelihoodDescription:
-        "Dengan policy yang ada, kemungkinan ketidakpatuhan berkurang",
-      residualImpactDescription:
-        "Jika terjadi pelanggaran, dampak masih signifikan",
-      residualRiskLevel: "MEDIUM",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "MITIGATE",
       treatmentRationale:
         "Implementasi Data Protection Impact Assessment (DPIA) dan penunjukan DPO",
@@ -1300,11 +1256,7 @@ async function main() {
       inherentRiskLevel: "HIGH",
       existingControls: "Monitoring manual, prosedur restart",
       controlEffectiveness: "PARTIALLY_EFFECTIVE",
-      residualLikelihood: 2,
-      residualImpact: 2,
-      residualLikelihoodDescription: "Monitoring mengurangi downtime",
-      residualImpactDescription: "Dampak terbatas dengan prosedur backup",
-      residualRiskLevel: "LOW",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "ACCEPT",
       treatmentRationale: "Sistem akan diganti dalam roadmap modernisasi",
       order: 1,
@@ -1328,12 +1280,7 @@ async function main() {
       inherentRiskLevel: "MEDIUM",
       existingControls: "Satpam 24 jam, CCTV, akses kartu",
       controlEffectiveness: "EFFECTIVE",
-      residualLikelihood: 1,
-      residualImpact: 2,
-      residualLikelihoodDescription:
-        "Sangat jarang terjadi dengan kontrol yang ada",
-      residualImpactDescription: "Dampak minor dengan enkripsi perangkat",
-      residualRiskLevel: "LOW",
+      // Residual risk akan diisi via mitigasi
       treatmentOption: "ACCEPT",
       treatmentRationale: "Kontrol yang ada sudah memadai",
       order: 2,
