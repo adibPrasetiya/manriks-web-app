@@ -182,6 +182,9 @@ export const ACTION_TYPES = {
   HTTP_REQUEST: "http.request",
   HTTP_RESPONSE: "http.response",
 
+  // Rate Limiting
+  RATE_LIMIT_TRIGGERED: "auth.rate_limit.triggered",
+
   // Errors
   ERROR: "error",
   VALIDATION_ERROR: "error.validation",

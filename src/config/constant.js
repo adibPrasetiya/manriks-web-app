@@ -86,3 +86,7 @@ export const REFRESH_TOKEN_EXPIRY_HOURS =
 
 // Password expiration configuration
 export const PASSWORD_EXPIRY_DAYS = 30;
+
+// Login rate limiting
+export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 menit
+export const RATE_LIMIT_MAX_ATTEMPTS = 5;
