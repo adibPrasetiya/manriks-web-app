@@ -486,6 +486,11 @@ const validateMitigation = async (
     throw new ResponseError(400, "Mitigasi sudah divalidasi sebelumnya.");
   }
 
+  // chek if already rejection
+  if (existingMitigation.validationStatus === "REJECTED") {
+    throw new ResponseError(400, "Mitigasi sudah ditolak sebelumnya");
+  }
+
   // Validate request body
   reqBody = validate(validateMitigationSchema, reqBody);
 
