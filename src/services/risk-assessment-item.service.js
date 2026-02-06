@@ -354,27 +354,27 @@ const update = async (unitKerjaId, worksheetId, itemId, reqBody, user) => {
 
   // Validate and recalculate residual risk level if likelihood/impact changed
   // Note: residual risk is now nullable and managed via mitigation approval
-  const residualLikelihood =
-    reqBody.residualLikelihood ?? existingItem.residualLikelihood;
-  const residualImpact = reqBody.residualImpact ?? existingItem.residualImpact;
+  // const residualLikelihood =
+  //   reqBody.residualLikelihood ?? existingItem.residualLikelihood;
+  // const residualImpact = reqBody.residualImpact ?? existingItem.residualImpact;
 
-  let residualRiskLevel = existingItem.residualRiskLevel;
+  // let residualRiskLevel = existingItem.residualRiskLevel;
 
-  if (
-    reqBody.residualLikelihood !== undefined ||
-    reqBody.residualImpact !== undefined
-  ) {
-    // Only validate if both values are provided (not null)
-    if (residualLikelihood !== null && residualImpact !== null) {
-      validateLikelihoodImpact(matrixSize, residualLikelihood, residualImpact);
-      residualRiskLevel = await getRiskLevelFromMatrix(
-        konteks.id,
-        residualLikelihood,
-        residualImpact,
-      );
-      updateData.residualRiskLevel = residualRiskLevel;
-    }
-  }
+  // if (
+  //   reqBody.residualLikelihood !== undefined ||
+  //   reqBody.residualImpact !== undefined
+  // ) {
+  //   // Only validate if both values are provided (not null)
+  //   if (residualLikelihood !== null && residualImpact !== null) {
+  //     validateLikelihoodImpact(matrixSize, residualLikelihood, residualImpact);
+  //     residualRiskLevel = await getRiskLevelFromMatrix(
+  //       konteks.id,
+  //       residualLikelihood,
+  //       residualImpact,
+  //     );
+  //     updateData.residualRiskLevel = residualRiskLevel;
+  //   }
+  // }
 
   // Verify risk category if changed
   if (reqBody.riskCategoryId !== undefined) {

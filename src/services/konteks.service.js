@@ -37,7 +37,7 @@ const create = async (reqBody, userId) => {
       periodStart: reqBody.periodStart,
       periodEnd: reqBody.periodEnd,
       matrixSize: reqBody.matrixSize,
-      isSystemDefault: reqBody.isSystemDefault || false,
+      isSystemDefault: false,
       riskAppetiteLevel: reqBody.riskAppetiteLevel || null,
       riskAppetiteDescription: reqBody.riskAppetiteDescription || null,
       status: KONTEKS_STATUSES.INACTIVE,
