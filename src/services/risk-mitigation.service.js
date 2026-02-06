@@ -531,7 +531,8 @@ const validateMitigation = async (
   });
 
   return {
-    message: "Mitigasi risiko berhasil divalidasi dan residual risk item diperbarui",
+    message:
+      "Mitigasi risiko berhasil divalidasi dan residual risk item diperbarui",
     data: mitigation,
   };
 };
@@ -583,6 +584,11 @@ const rejectMitigation = async (
       400,
       "Mitigasi yang sudah divalidasi tidak dapat ditolak.",
     );
+  }
+
+  // check if already rejected
+  if (existingMitigation.validationStatus === "REJECTED") {
+    throw new ResponseError(400, "Mitigasi sudah di tolak tidak bisa ditolak");
   }
 
   // Validate request body
