@@ -58,12 +58,17 @@ export const createMitigationSchema = Joi.object({
   }),
 
   // Proposed Residual Risk - nilai yang diajukan pengelola
-  proposedResidualLikelihood: Joi.number().integer().min(1).required().messages({
-    "number.base": "Proposed residual likelihood harus berupa angka",
-    "number.integer": "Proposed residual likelihood harus berupa bilangan bulat",
-    "number.min": "Proposed residual likelihood minimal 1",
-    "any.required": "Proposed residual likelihood wajib diisi",
-  }),
+  proposedResidualLikelihood: Joi.number()
+    .integer()
+    .min(1)
+    .required()
+    .messages({
+      "number.base": "Proposed residual likelihood harus berupa angka",
+      "number.integer":
+        "Proposed residual likelihood harus berupa bilangan bulat",
+      "number.min": "Proposed residual likelihood minimal 1",
+      "any.required": "Proposed residual likelihood wajib diisi",
+    }),
 
   proposedResidualImpact: Joi.number().integer().min(1).required().messages({
     "number.base": "Proposed residual impact harus berupa angka",
@@ -108,16 +113,6 @@ export const updateMitigationSchema = Joi.object({
     "date.format": "Format tanggal selesai rencana harus ISO 8601",
   }),
 
-  actualStartDate: Joi.date().iso().allow(null).messages({
-    "date.base": "Tanggal mulai aktual harus berupa tanggal yang valid",
-    "date.format": "Format tanggal mulai aktual harus ISO 8601",
-  }),
-
-  actualEndDate: Joi.date().iso().allow(null).messages({
-    "date.base": "Tanggal selesai aktual harus berupa tanggal yang valid",
-    "date.format": "Format tanggal selesai aktual harus ISO 8601",
-  }),
-
   responsiblePerson: Joi.string().max(255).allow("", null).messages({
     "string.base": "Penanggung jawab harus berupa teks",
     "string.max": "Penanggung jawab maksimal 255 karakter",
@@ -148,7 +143,8 @@ export const updateMitigationSchema = Joi.object({
   // Proposed Residual Risk (optional on update)
   proposedResidualLikelihood: Joi.number().integer().min(1).messages({
     "number.base": "Proposed residual likelihood harus berupa angka",
-    "number.integer": "Proposed residual likelihood harus berupa bilangan bulat",
+    "number.integer":
+      "Proposed residual likelihood harus berupa bilangan bulat",
     "number.min": "Proposed residual likelihood minimal 1",
   }),
 
