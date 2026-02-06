@@ -113,6 +113,16 @@ export const updateMitigationSchema = Joi.object({
     "date.format": "Format tanggal selesai rencana harus ISO 8601",
   }),
 
+  actualStartDate: Joi.date().iso().allow(null).messages({
+    "date.base": "Tanggal mulai aktual harus berupa tanggal yang valid",
+    "date.format": "Format tanggal mulai aktual harus ISO 8601",
+  }),
+
+  actualEndDate: Joi.date().iso().allow(null).messages({
+    "date.base": "Tanggal selesai aktual harus berupa tanggal yang valid",
+    "date.format": "Format tanggal selesai aktual harus ISO 8601",
+  }),
+
   responsiblePerson: Joi.string().max(255).allow("", null).messages({
     "string.base": "Penanggung jawab harus berupa teks",
     "string.max": "Penanggung jawab maksimal 255 karakter",
