@@ -58,7 +58,7 @@ export const checkMitigationModifiable = (mitigation) => {
   if (mitigation.validationStatus === "VALIDATED" || mitigation.isValidated) {
     throw new ResponseError(
       403,
-      "Mitigasi yang sudah divalidasi tidak dapat diubah."
+      "Mitigasi yang sudah divalidasi tidak dapat diubah.",
     );
   }
 };

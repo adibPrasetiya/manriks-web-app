@@ -71,6 +71,7 @@ const itemSelect = {
   residualLikelihoodDescription: true,
   residualImpactDescription: true,
   residualRiskLevel: true,
+  additionalControl: true,
   // Treatment & Priority
   treatmentOption: true,
   treatmentRationale: true,
@@ -162,6 +163,7 @@ const create = async (unitKerjaId, worksheetId, reqBody, user) => {
       residualLikelihoodDescription: null,
       residualImpactDescription: null,
       residualRiskLevel: null,
+      additionalControl: null,
       // Treatment & Priority
       treatmentOption: reqBody.treatmentOption || null,
       treatmentRationale: reqBody.treatmentRationale || null,

@@ -520,6 +520,7 @@ const validateMitigation = async (
         residualImpactDescription:
           existingMitigation.proposedResidualImpactDescription,
         residualRiskLevel: existingMitigation.proposedResidualRiskLevel,
+        additionalControl: existingMitigation.name,
       },
     }),
   ]);

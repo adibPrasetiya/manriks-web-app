@@ -448,6 +448,7 @@ model RiskAssessmentItem {
   residualLikelihoodDescription String? @db.Text
   residualImpactDescription     String? @db.Text
   residualRiskLevel             String? @db.VarChar(50)
+  additionalControl             String? @db.VarChar(255)
 
   // Treatment & Priority
   treatmentOption    String? @db.VarChar(50)
